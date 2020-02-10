@@ -5,6 +5,15 @@
 [![PyPi Package](https://img.shields.io/pypi/v/{{LIBNAME}}.svg)](https://pypi.python.org/pypi/{{LIBNAME}})
 [![Python Versions](https://img.shields.io/pypi/pyversions/{{LIBNAME}}.svg)](https://pypi.python.org/pypi/{{LIBNAME}})
 
+# Pre-requisites
+
+You must enable (delete where appropriate):
+
+* i2c: `sudo raspi-config nonint do_i2c 0`
+* spi: `sudo raspi-config nonint do_spi 0`
+
+You can optionally run `sudo raspi-config` or the graphical Raspberry Pi Configuration UI to enable interfaces.
+
 # Installing
 
 Stable library from PyPi:
