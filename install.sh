@@ -206,5 +206,5 @@ if [ -f "/usr/bin/pydoc" ]; then
 fi
 
 success "\nAll done!"
-inform "If this is your first time installing you should reboot for hardware changes to tkae effect.\n"
+inform "If this is your first time installing you should reboot for hardware changes to take effect.\n"
 inform "Find uninstall steps in $UNINSTALLER\n"
