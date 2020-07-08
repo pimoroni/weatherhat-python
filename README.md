@@ -18,7 +18,9 @@ You can optionally run `sudo raspi-config` or the graphical Raspberry Pi Configu
 
 Stable library from PyPi:
 
-* Just run `sudo pip install {{LIBNAME}}`
+* Just run `pip3 install {{LIBNAME}}`
+
+In some cases you may need to use `sudo` or install pip with: `sudo apt install python3-pip`
 
 Latest/development library from GitHub:
 
