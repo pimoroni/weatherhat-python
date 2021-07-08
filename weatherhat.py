@@ -94,6 +94,7 @@ class WeatherHAT:
         self.lux = 0
         self.wind_mph = 0
         self.wind_kmph = 0
+        self.wind_direction_history = []
         self.rain_mm_sec = 0
         self.rain_mm_total = 0
 
@@ -132,6 +133,9 @@ class WeatherHAT:
         # Discard old wind directon samples
         self._avg_wind_direction = self._avg_wind_direction[-60:]
         self.wind_degrees_avg = sum(self._avg_wind_direction) / len(self._avg_wind_direction)
+
+        self.wind_direction_history.append(self.wind_degrees_avg)
+        self.wind_direction_history = self.wind_direction_history[-120:]
 
         # Don't update rain/wind data until we've sampled for long enough
         if delta < frequency:

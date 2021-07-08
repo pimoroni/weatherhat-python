@@ -13,7 +13,7 @@ import ST7789
 from fonts.ttf import RobotoMedium as UserFont
 from PIL import Image, ImageDraw, ImageFont
 
-from weatherhat import WeatherHAT
+import weatherhat
 
 
 FPS = 10
@@ -180,6 +180,10 @@ class SensorView(View):
     def __init__(self, image, sensordata):
         View.__init__(self, image)
         self._data = sensordata
+        self.init_view()
+
+    def init_view(self):
+        pass
 
     def render(self):
         self.clear()
@@ -246,6 +250,62 @@ class WindView(SensorView):
     """Wind Overview."""
 
     title = "Wind"
+
+    def init_view(self):
+        self.direction_history = []
+
+    def render_view(self):
+        ox = DISPLAY_WIDTH / 2
+        oy = DISPLAY_HEIGHT / 2
+        radius = 70
+        for direction, name in weatherhat.wind_degrees_to_cardinal.items():
+            p = math.radians(direction)
+            x = ox + math.sin(p) * radius
+            y = oy - math.cos(p) * radius
+
+            name = "".join([l[0] for l in name.split(" ")])
+            tx, ty = self._draw.textsize(name, font=self.font_small)
+            x -= tx / 2
+            y -= ty / 2
+            self._draw.text((x, y), name, font=self.font_small, fill=COLOR_WHITE)
+
+        needle = math.radians(self._data.wind_degrees_avg)
+
+        radius -= 30
+
+        self._draw.line((
+            ox,
+            oy,
+            ox + math.sin(needle) * radius,
+            oy - math.cos(needle) * radius
+        ), (255, 0, 0), 5)
+
+        self._draw.line((
+            ox,
+            oy,
+            ox + math.sin(needle - math.pi) * radius,
+            oy - math.cos(needle - math.pi) * radius
+        ), (255, 255, 255), 5)
+
+        self._draw.text(
+            (0, 220),
+            "Speed: {:0.2f}mph".format(self._data.wind_mph),
+            font=self.font,
+            fill=COLOR_WHITE
+        )
+
+        """
+        # TODO add config options for compass needle/polar history plot
+        self.direction_history.append(self._data.wind_degrees_avg)
+        self.direction_history = self.direction_history[-120:]
+        for i, direction in enumerate(self.direction_history):
+            p = math.radians(direction)
+            r = radius # int(radius / 120.0 * i)
+            x = ox + math.sin(p) * r
+            y = oy - math.cos(p) * r
+
+            self._draw.ellipse((x - 1, y - 1, x + 1, y + 1), fill=(int(255 / 120.0 * i), 0, 0))
+        """
 
 
 class WindSettingsView(SettingsView):
@@ -379,7 +439,7 @@ def main():
     for pin in BUTTONS:
         GPIO.add_event_detect(pin, GPIO.FALLING, handle_button, bouncetime=200)
 
-    sensordata = WeatherHAT()
+    sensordata = weatherhat.WeatherHAT()
 
     viewcontroller = ViewController(
         [
