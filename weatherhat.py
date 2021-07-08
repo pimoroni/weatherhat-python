@@ -88,41 +88,98 @@ class WeatherHAT:
         self._avg_wind_direction = []
 
         # Data API... kinda
+        self.temperature_offset = -7.5
+        self.device_temperature = 0
         self.temperature = 0
+        self.temperature_history = []
+
         self.pressure = 0
+        self.pressure_history = []
+
         self.humidity = 0
+        self.absolute_humidity = 0
+        self.humidity_history = []
+        self.dewpoint = 0
+
         self.lux = 0
+        self.lux_history = []
+
         self.wind_mph = 0
         self.wind_kmph = 0
+        self.wind_speed_history = []
+
+        self.wind_degrees = 0
+        self.wind_degrees_avg = 0
         self.wind_direction_history = []
+
         self.rain_mm_sec = 0
         self.rain_mm_total = 0
+        self.rain_history = []
 
         self.reset_counts()
 
     def reset_counts(self):
+        self._lock.acquire(blocking=True)
+        self._ioe.clear_switch_counter(ANI2)
+        self._ioe.clear_switch_counter(R4)
+        self._lock.release()
+
         self._wind_counts = 0
         self._rain_counts = 0
         self._last_wind_counts = 0
         self._last_rain_counts = 0
         self._t_start = time.time()
 
+    def compensate_humidity(self, humidity, temperature, corrected_temperature):
+        """Compensate humidity.
+
+        Convert humidity to relative humidity.
+
+        """
+        dewpoint = self.get_dewpoint(humidity, temperature)
+        corrected_humidity = 100 - (5 * (corrected_temperature - dewpoint)) - 20
+        return min(100, max(0, corrected_humidity))
+
+    def get_dewpoint(self, humidity, temperature):
+        """Calculate Dewpoint."""
+        return temperature - ((100 - humidity) / 5)
+
+    def hpa_to_inches(self, hpa):
+        """Convert hextopascals to inches of mercury."""
+        return hpa * 0.02953
+
     def degrees_to_cardinal(self, degrees):
         value, cardinal = min(wind_degrees_to_cardinal.items(), key=lambda item: abs(item[0] - degrees))
         return cardinal
 
-    def update(self, frequency=60.0):
+    def update(self, interval=60.0):
         # Time elapsed since last update
         delta = time.time() - self._t_start
 
         # Always update TPHL & Wind Direction
         self._lock.acquire(blocking=True)
 
-        self.temperature = self._bme280.get_temperature()
+        # TODO make history depth configurable
+        # TODO make update interval for sensors fixed so history always represents a known period
+
+        self.device_temperature = self._bme280.get_temperature()
+        self.temperature = self.device_temperature + self.temperature_offset
+        self.temperature_history.append(self.temperature)
+        self.temperature_history = self.temperature_history[-120:]
+
         self.pressure = self._bme280.get_pressure()
-        self.humidity = self._bme280.get_humidity()
+        self.pressure_history.append(self.pressure)
+        self.pressure_history = self.pressure_history[-120:]
+
+        self.absolute_humidity = self._bme280.get_humidity()
+        self.humidity = self.compensate_humidity(self.absolute_humidity, self.device_temperature, self.temperature)
+        self.humidity_history.append(self.humidity)
+        self.humidity_history = self.humidity_history[-120:]
+        self.dewpoint = self.get_dewpoint(self.humidity, self.device_temperature)
 
         self.lux = self._ltr559.get_lux()
+        self.lux_history.append(self.lux)
+        self.lux_history = self.lux_history[-120:]
 
         wind_direction = self._ioe.input(WV)
 
@@ -138,12 +195,14 @@ class WeatherHAT:
         self.wind_direction_history = self.wind_direction_history[-120:]
 
         # Don't update rain/wind data until we've sampled for long enough
-        if delta < frequency:
+        if delta < interval:
             return
 
         rain_hz = self._rain_counts / delta
         wind_hz = self._wind_counts / delta
         self.reset_counts()
+
+        # print(delta, rain_hz, wind_hz)
 
         wind_hz /= 2.0  # Two pulses per rotation
         wind_cms = wind_hz * WV_CIRCUMFERENCE * 1.18
@@ -151,8 +210,14 @@ class WeatherHAT:
         self.wind_mph = max(0, self.wind_kmph * 0.621371)
         self._avg_wind_speed.append(self.wind_mph)
 
+        self.wind_mph_avg = sum(self._avg_wind_speed) / len(self._avg_wind_speed)
+
+        self.wind_speed_history.append(self.wind_mph_avg)
+
         self.rain_mm_sec = rain_hz * RAIN_MM_PER_TICK
         self.rain_mm_total = self._rain_counts * RAIN_MM_PER_TICK
+        self.rain_history.append(self.rain_mm_sec)
+        self.rain_history = self.rain_history[-120:]
 
     def handle_ioe_interrupt(self, pin):
         self._lock.acquire(blocking=True)

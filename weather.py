@@ -33,9 +33,6 @@ COLOR_RED = (247, 0, 63)
 COLOR_BLACK = (0, 0, 0)
 
 
-RECT_BANNER = (0, 0, DISPLAY_WIDTH, 40)
-
-
 class View:
     def __init__(self, image):
         self._image = image
@@ -164,13 +161,14 @@ class View:
             font = ImageFont.truetype(font.path, font.size - 1)
 
     def banner(self, text, bgcolor=COLOR_BLUE, textcolor=COLOR_WHITE):
-        self._draw.rectangle(RECT_BANNER, COLOR_BLUE)
+        rect = (0, 0, DISPLAY_WIDTH, 30)
+        self._draw.rectangle(rect, bgcolor)
         self.text_in_rect(
             text,
             self.font,
-            RECT_BANNER,
+            rect,
             line_spacing=1,
-            textcolor=COLOR_WHITE
+            textcolor=textcolor
         )
 
 
@@ -236,6 +234,12 @@ class MainView(SensorView):
             font=self.font_small,
             fill=COLOR_WHITE
         )
+        self._draw.text(
+            (0, 140),
+            "Dewpoint: {:0.2f}C".format(self._data.dewpoint),
+            font=self.font_small,
+            fill=COLOR_WHITE
+        )
 
 
 class SettingsView(View):
@@ -246,32 +250,17 @@ class MainSettingsView(SettingsView):
     pass
 
 
-class WindView(SensorView):
-    """Wind Overview."""
+class WindDirectionView(SensorView):
+    """Wind Direction."""
 
-    title = "Wind"
-
-    def init_view(self):
-        self.direction_history = []
+    title = "Wind Direction"
 
     def render_view(self):
         ox = DISPLAY_WIDTH / 2
-        oy = DISPLAY_HEIGHT / 2
-        radius = 70
-        for direction, name in weatherhat.wind_degrees_to_cardinal.items():
-            p = math.radians(direction)
-            x = ox + math.sin(p) * radius
-            y = oy - math.cos(p) * radius
-
-            name = "".join([l[0] for l in name.split(" ")])
-            tx, ty = self._draw.textsize(name, font=self.font_small)
-            x -= tx / 2
-            y -= ty / 2
-            self._draw.text((x, y), name, font=self.font_small, fill=COLOR_WHITE)
-
+        oy = (DISPLAY_HEIGHT - 30) / 2 + 30
         needle = math.radians(self._data.wind_degrees_avg)
 
-        radius -= 30
+        radius = 50
 
         self._draw.line((
             ox,
@@ -287,6 +276,47 @@ class WindView(SensorView):
             oy - math.cos(needle - math.pi) * radius
         ), (255, 255, 255), 5)
 
+        # TODO add config options for compass needle/polar history plot
+        trails = 40
+        trail_length = len(self._data.wind_direction_history[-120:])
+        for i, direction in enumerate(self._data.wind_direction_history[-120:]):
+            p = math.radians(direction)
+            # r = radius
+            r = radius + trails - (float(i) / trail_length * trails)
+            x = ox + math.sin(p) * r
+            y = oy - math.cos(p) * r
+
+            self._draw.ellipse((x - 1, y - 1, x + 1, y + 1), (int(255 / trail_length * i), 0, 0))
+
+        radius += 30
+        for direction, name in weatherhat.wind_degrees_to_cardinal.items():
+            p = math.radians(direction)
+            x = ox + math.sin(p) * radius
+            y = oy - math.cos(p) * radius
+
+            name = "".join([l[0] for l in name.split(" ")])
+            tw, th = self._draw.textsize(name, font=self.font_small)
+            x -= tw / 2
+            y -= th / 2
+            self._draw.text((x, y), name, font=self.font_small, fill=COLOR_WHITE)
+
+        speed_text = "{:0.2f}mph".format(self._data.wind_mph)
+        tw, th = self._draw.textsize(speed_text, font=self.font_small)
+
+        self._draw.text(
+            (DISPLAY_WIDTH - tw, DISPLAY_HEIGHT - th),
+            "{:0.2f}mph".format(self._data.wind_mph),
+            font=self.font_small,
+            fill=COLOR_WHITE
+        )
+
+
+class WindSpeedView(SensorView):
+    """Wind Speed."""
+
+    title = "Wind Speed"
+
+    def render_view(self):
         self._draw.text(
             (0, 220),
             "Speed: {:0.2f}mph".format(self._data.wind_mph),
@@ -294,18 +324,15 @@ class WindView(SensorView):
             fill=COLOR_WHITE
         )
 
-        """
-        # TODO add config options for compass needle/polar history plot
-        self.direction_history.append(self._data.wind_degrees_avg)
-        self.direction_history = self.direction_history[-120:]
-        for i, direction in enumerate(self.direction_history):
-            p = math.radians(direction)
-            r = radius # int(radius / 120.0 * i)
-            x = ox + math.sin(p) * r
-            y = oy - math.cos(p) * r
-
-            self._draw.ellipse((x - 1, y - 1, x + 1, y + 1), fill=(int(255 / 120.0 * i), 0, 0))
-        """
+        if len(self._data.wind_speed_history):
+            max_speed = max(self._data.wind_speed_history)
+            for i, speed in enumerate(self._data.wind_speed_history[-120:]):
+                x = i * 2
+                h = int((DISPLAY_HEIGHT - 30) / max_speed * speed)
+                self._draw.rectangle((
+                    x, DISPLAY_HEIGHT - h,
+                    x, DISPLAY_HEIGHT
+                ), fill=(0, 255, 0))
 
 
 class WindSettingsView(SettingsView):
@@ -448,7 +475,11 @@ def main():
                 MainSettingsView(image)
             ),
             (
-                WindView(image, sensordata),
+                WindDirectionView(image, sensordata),
+                WindSettingsView(image)
+            ),
+            (
+                WindSpeedView(image, sensordata),
                 WindSettingsView(image)
             ),
             (
@@ -467,7 +498,7 @@ def main():
     )
 
     while True:
-        sensordata.update()
+        sensordata.update(interval=5.0)
         viewcontroller.update()
         viewcontroller.render()
         display.display(image.convert("RGB"))
