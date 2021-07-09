@@ -191,6 +191,27 @@ class SensorView(View):
     def render_view(self):
         pass
 
+    def graph(self, values, graph_x=0, graph_y=0, width=DISPLAY_WIDTH, height=DISPLAY_HEIGHT, vmin=0, vmax=1.0, bar_width=2):
+        if not len(values):
+            return
+
+        max_values = int(width / bar_width)
+
+        values = values[-max_values:]
+
+        for i, v in enumerate(values):
+            bar_color = (0, 255, 0)
+            if (v - vmin) > vmax:
+                v = vmax
+                bar_color = (255, 0, 0)
+
+            x = (i * bar_width)
+            h = ((v - vmin) / vmax) * height
+            self._draw.rectangle((
+                graph_x + x, graph_y + height - h,
+                graph_x + x, graph_y + height
+            ), fill=bar_color)
+
 
 class MainView(SensorView):
     """Main overview.
@@ -324,15 +345,16 @@ class WindSpeedView(SensorView):
             fill=COLOR_WHITE
         )
 
-        if len(self._data.wind_speed_history):
-            max_speed = max(self._data.wind_speed_history)
-            for i, speed in enumerate(self._data.wind_speed_history[-120:]):
-                x = i * 2
-                h = int((DISPLAY_HEIGHT - 30) / max_speed * speed)
-                self._draw.rectangle((
-                    x, DISPLAY_HEIGHT - h,
-                    x, DISPLAY_HEIGHT
-                ), fill=(0, 255, 0))
+        self.graph(
+            self._data.wind_speed_history,
+            graph_x=0,
+            graph_y=30,
+            width=DISPLAY_WIDTH,
+            height=DISPLAY_HEIGHT - 30,
+            vmin=0,
+            vmax=20,
+            bar_width=2
+        )
 
 
 class WindSettingsView(SettingsView):
@@ -344,6 +366,25 @@ class RainView(SensorView):
 
     title = "Rain"
 
+    def render_view(self):
+        self._draw.text(
+            (0, 220),
+            "Rain: {:0.2f}mm/sec".format(self._data.rain_mm_sec),
+            font=self.font,
+            fill=COLOR_WHITE
+        )
+
+        self.graph(
+            self._data.rain_history,
+            graph_x=0,
+            graph_y=0,
+            width=DISPLAY_WIDTH,
+            height=DISPLAY_HEIGHT,
+            vmin=0,
+            vmax=1.0,
+            bar_width=2
+        )
+
 
 class RainSettingsView(SettingsView):
     pass
@@ -354,6 +395,25 @@ class TPHView(SensorView):
 
     title = "BME280: Environment"
 
+    def render_view(self):
+        self._draw.text(
+            (0, 220),
+            "Temperature: {:0.2f}C".format(self._data.temperature),
+            font=self.font,
+            fill=COLOR_WHITE
+        )
+
+        self.graph(
+            self._data.temperature_history,
+            graph_x=0,
+            graph_y=0,
+            width=DISPLAY_WIDTH,
+            height=DISPLAY_HEIGHT,
+            vmin=0,
+            vmax=40,
+            bar_width=2
+        )
+
 
 class TPHSettingsView(SettingsView):
     pass
@@ -363,6 +423,25 @@ class LightView(SensorView):
     """Light."""
 
     title = "LTR559: LIght"
+
+    def render_view(self):
+        self._draw.text(
+            (0, 220),
+            "Light: {:0.2f}lux".format(self._data.lux),
+            font=self.font,
+            fill=COLOR_WHITE
+        )
+
+        self.graph(
+            self._data.lux_history,
+            graph_x=0,
+            graph_y=0,
+            width=DISPLAY_WIDTH,
+            height=DISPLAY_HEIGHT,
+            vmin=0,
+            vmax=200,
+            bar_width=2
+        )
 
 
 class LightSettingsView(SettingsView):
