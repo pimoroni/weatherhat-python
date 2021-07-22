@@ -9,6 +9,9 @@ from ltr559 import LTR559
 from smbus2 import SMBus
 
 
+__version__ = '0.0.1'
+
+
 # Anemometer pins
 ANI1 = 5       # P0.0
 ANI2 = 6       # P0.1
