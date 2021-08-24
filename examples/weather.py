@@ -206,22 +206,35 @@ class SensorView(View):
     def render_view(self):
         pass
 
-    def graph(self, values, graph_x=0, graph_y=0, width=DISPLAY_WIDTH, height=DISPLAY_HEIGHT, vmin=0, vmax=1.0, bar_width=2):
+    def blend(self, a, b, factor):
+        blend_b = factor
+        blend_a = 1.0 - factor
+        return tuple([int((a[i] * blend_a) + (b[i] * blend_b)) for i in range(3)])
+
+    def graph(self, values, graph_x=0, graph_y=0, width=DISPLAY_WIDTH, height=DISPLAY_HEIGHT, vmin=0, vmax=1.0, bar_width=2, colors=None):
         if not len(values):
             return
+        if colors is None:
+            #         Blue          Teal           Green        Yellow         Red
+            colors = [(0, 0, 255), (0, 255, 255), (0, 255, 0), (255, 255, 0), (255, 0, 0)]
 
         max_values = int(width / bar_width)
 
         values = values[-max_values:]
 
         for i, v in enumerate(values):
-            bar_color = (0, 255, 0)
-            if (v - vmin) > vmax:
-                v = vmax
-                bar_color = (255, 0, 0)
+            v = min(vmax, max(vmin, v))
+            scale = float(v - vmin) / float(vmax - vmin)
+            color = scale * (len(colors) - 1)
+            color_idx = int(color)      # The integer part of color becomes our index into the colors array
+            blend = color - color_idx   # The fractional part forms the blend amount between the two colours
+            bar_color = colors[color_idx]
+            if color_idx < len(colors) - 1:
+                bar_color = self.blend(colors[color_idx], colors[color_idx + 1], blend)
+                bar_color = bar_color
 
             x = (i * bar_width)
-            h = ((v - vmin) / vmax) * height
+            h = scale * height
             self._draw.rectangle((
                 graph_x + x, graph_y + height - h,
                 graph_x + x, graph_y + height
@@ -568,11 +581,11 @@ class LightView(SensorView):
         )
 
         self.graph(
-            self._data.lux_history,
+            self._data.lux_history[::10],
             graph_x=0,
-            graph_y=0,
+            graph_y=30,
             width=DISPLAY_WIDTH,
-            height=DISPLAY_HEIGHT,
+            height=DISPLAY_HEIGHT - 50,
             vmin=0,
             vmax=200,
             bar_width=2
@@ -801,7 +814,7 @@ def main():
     )
 
     while True:
-        sensordata.update(interval=5.0)
+        sensordata.update(interval=5.0, history_depth=1200)
         viewcontroller.update()
         viewcontroller.render()
         display.display(image.convert("RGB"))

@@ -155,7 +155,7 @@ class WeatherHAT:
         value, cardinal = min(wind_degrees_to_cardinal.items(), key=lambda item: abs(item[0] - degrees))
         return cardinal
 
-    def update(self, interval=60.0):
+    def update(self, interval=60.0, history_depth=120, wind_direction_samples=60):
         # Time elapsed since last update
         delta = time.time() - self._t_start
 
@@ -168,21 +168,21 @@ class WeatherHAT:
         self.device_temperature = self._bme280.get_temperature()
         self.temperature = self.device_temperature + self.temperature_offset
         self.temperature_history.append(self.temperature)
-        self.temperature_history = self.temperature_history[-120:]
+        self.temperature_history = self.temperature_history[-history_depth:]
 
         self.pressure = self._bme280.get_pressure()
         self.pressure_history.append(self.pressure)
-        self.pressure_history = self.pressure_history[-120:]
+        self.pressure_history = self.pressure_history[-history_depth:]
 
         self.absolute_humidity = self._bme280.get_humidity()
         self.humidity = self.compensate_humidity(self.absolute_humidity, self.device_temperature, self.temperature)
         self.humidity_history.append(self.humidity)
-        self.humidity_history = self.humidity_history[-120:]
+        self.humidity_history = self.humidity_history[-history_depth:]
         self.dewpoint = self.get_dewpoint(self.humidity, self.device_temperature)
 
         self.lux = self._ltr559.get_lux()
         self.lux_history.append(self.lux)
-        self.lux_history = self.lux_history[-120:]
+        self.lux_history = self.lux_history[-history_depth:]
 
         wind_direction = self._ioe.input(WV)
 
@@ -191,11 +191,11 @@ class WeatherHAT:
         value, self.wind_degrees = min(wind_direction_to_degrees.items(), key=lambda item: abs(item[0] - wind_direction))
         self._avg_wind_direction.append(self.wind_degrees)
         # Discard old wind directon samples
-        self._avg_wind_direction = self._avg_wind_direction[-60:]
+        self._avg_wind_direction = self._avg_wind_direction[-wind_direction_samples:]
         self.wind_degrees_avg = sum(self._avg_wind_direction) / len(self._avg_wind_direction)
 
         self.wind_direction_history.append(self.wind_degrees_avg)
-        self.wind_direction_history = self.wind_direction_history[-120:]
+        self.wind_direction_history = self.wind_direction_history[-history_depth:]
 
         # Don't update rain/wind data until we've sampled for long enough
         if delta < interval:
@@ -220,7 +220,7 @@ class WeatherHAT:
         self.rain_mm_sec = rain_hz * RAIN_MM_PER_TICK
         self.rain_mm_total = self._rain_counts * RAIN_MM_PER_TICK
         self.rain_history.append(self.rain_mm_sec)
-        self.rain_history = self.rain_history[-120:]
+        self.rain_history = self.rain_history[-history_depth:]
 
     def handle_ioe_interrupt(self, pin):
         self._lock.acquire(blocking=True)
