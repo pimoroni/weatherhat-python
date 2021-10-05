@@ -108,6 +108,7 @@ class WeatherHAT:
         self.lux_history = []
 
         self.wind_mph = 0
+        self.wind_mph_avg = 0
         self.wind_kmph = 0
         self.wind_speed_history = []
 
