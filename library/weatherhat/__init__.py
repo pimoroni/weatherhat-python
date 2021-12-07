@@ -12,20 +12,22 @@ from smbus2 import SMBus
 __version__ = '0.0.1'
 
 
-# Anemometer pins
-ANI1 = 5       # P0.0
-ANI2 = 6       # P0.1
+# Wind Vane
+PIN_WV = 8     # P0.3 ANE6
 
-# Wind vane (ADC)
-WV = 8         # P0.3 ANI6
-WV_RADIUS = 7  # Radius from center to the center of a cup, in CM
-WV_CIRCUMFERENCE = WV_RADIUS * 2 * math.pi
+# Anemometer
+PIN_ANE1 = 5       # P0.0
+PIN_ANE2 = 6       # P0.1
+
+ANE_RADIUS = 7  # Radius from center to the center of a cup, in CM
+ANE_CIRCUMFERENCE = ANE_RADIUS * 2 * math.pi
+ANE_FACTOR = 2.18  # Anemometer factor
 
 # Rain gauge
-R2 = 3         # P1.2
-R3 = 7         # P1.1
-R4 = 2         # P1.0
-R5 = 1         # P1.5
+PIN_R2 = 3         # P1.2
+PIN_R3 = 7         # P1.1
+PIN_R4 = 2         # P1.0
+PIN_R5 = 1         # P1.5
 RAIN_MM_PER_TICK = 0.2794
 
 wind_degrees_to_cardinal = {
@@ -68,22 +70,22 @@ class WeatherHAT:
         self._ioe.set_adc_vref(3.3)
 
         # Wind Vane
-        self._ioe.set_mode(WV, io.ADC)
+        self._ioe.set_mode(PIN_WV, io.ADC)
 
         # Anemometer
-        self._ioe.set_mode(ANI1, io.OUT)
-        self._ioe.output(ANI1, 0)
-        self._ioe.set_pin_interrupt(ANI2, True)
-        self._ioe.setup_switch_counter(ANI2)
+        self._ioe.set_mode(PIN_ANE1, io.OUT)
+        self._ioe.output(PIN_ANE1, 0)
+        self._ioe.set_pin_interrupt(PIN_ANE2, True)
+        self._ioe.setup_switch_counter(PIN_ANE2)
 
         # Rain Sensor
-        self._ioe.set_mode(R2, io.IN_PU)
-        self._ioe.set_mode(R3, io.OUT)
-        self._ioe.set_mode(R4, io.IN_PU)
-        self._ioe.setup_switch_counter(R4)
-        self._ioe.set_mode(R5, io.IN_PU)
-        self._ioe.output(R3, 0)
-        self._ioe.set_pin_interrupt(R4, True)
+        self._ioe.set_mode(PIN_R2, io.IN_PU)
+        self._ioe.set_mode(PIN_R3, io.OUT)
+        self._ioe.set_mode(PIN_R4, io.IN_PU)
+        self._ioe.setup_switch_counter(PIN_R4)
+        self._ioe.set_mode(PIN_R5, io.IN_PU)
+        self._ioe.output(PIN_R3, 0)
+        self._ioe.set_pin_interrupt(PIN_R4, True)
         self._ioe.on_interrupt(self.handle_ioe_interrupt)
         self._ioe.clear_interrupt()
 
@@ -124,8 +126,8 @@ class WeatherHAT:
 
     def reset_counts(self):
         self._lock.acquire(blocking=True)
-        self._ioe.clear_switch_counter(ANI2)
-        self._ioe.clear_switch_counter(R4)
+        self._ioe.clear_switch_counter(PIN_ANE2)
+        self._ioe.clear_switch_counter(PIN_R4)
         self._lock.release()
 
         self._wind_counts = 0
@@ -185,7 +187,7 @@ class WeatherHAT:
         self.lux_history.append(self.lux)
         self.lux_history = self.lux_history[-history_depth:]
 
-        wind_direction = self._ioe.input(WV)
+        wind_direction = self._ioe.input(PIN_WV)
 
         self._lock.release()
 
@@ -208,8 +210,10 @@ class WeatherHAT:
 
         # print(delta, rain_hz, wind_hz)
 
+        # wind speed of 2.4km/h causes the switch to close once per second
+
         wind_hz /= 2.0  # Two pulses per rotation
-        wind_cms = wind_hz * WV_CIRCUMFERENCE * 1.18
+        wind_cms = wind_hz * ANE_CIRCUMFERENCE * ANE_FACTOR
         self.wind_kmph = (wind_cms * 60 * 60) / 100.0 / 1000.0
         self.wind_mph = max(0, self.wind_kmph * 0.621371)
         self._avg_wind_speed.append(self.wind_mph)
@@ -227,8 +231,8 @@ class WeatherHAT:
         self._lock.acquire(blocking=True)
         self._ioe.clear_interrupt()
 
-        wind_counts, _ = self._ioe.read_switch_counter(ANI2)
-        rain_counts, _ = self._ioe.read_switch_counter(R4)
+        wind_counts, _ = self._ioe.read_switch_counter(PIN_ANE2)
+        rain_counts, _ = self._ioe.read_switch_counter(PIN_R4)
 
         # If the counter value is *less* than the previous value
         # then we know the 7-bit switch counter overflowed
@@ -253,5 +257,4 @@ class WeatherHAT:
         # print(wind_counts, rain_counts, self._wind_counts, self._rain_counts)
 
         self._lock.release()
-
 
