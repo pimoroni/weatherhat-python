@@ -12,7 +12,7 @@ import yaml
 import ltr559
 import RPi.GPIO as GPIO
 import ST7789
-from fonts.ttf import RobotoMedium as UserFont
+from fonts.ttf import ManropeMedium as UserFont
 from PIL import Image, ImageDraw, ImageFont
 
 import weatherhat
@@ -33,6 +33,7 @@ COLOR_GREEN = (99, 255, 124)
 COLOR_YELLOW = (254, 219, 82)
 COLOR_RED = (247, 0, 63)
 COLOR_BLACK = (0, 0, 0)
+COLOR_GREY = (100, 100, 100)
 
 # Only the ALPHA channel is used from these images
 icon_drop = Image.open("icons/icon-drop.png").convert("RGBA")
@@ -52,7 +53,9 @@ class View:
         self._image = image
         self._draw = ImageDraw.Draw(image)
 
-        self.font = ImageFont.truetype(UserFont, 18)
+        self.font_large = ImageFont.truetype(UserFont, 50)
+        self.font = ImageFont.truetype(UserFont, 25)
+        self.font_medium = ImageFont.truetype(UserFont, 22)
         self.font_small = ImageFont.truetype(UserFont, 14)
 
     def button_a(self):
@@ -200,7 +203,7 @@ class SensorView(View):
 
     def render(self):
         self.clear()
-        self.banner(self.title)
+        #self.banner(self.title)
         self.render_view()
 
     def render_view(self):
@@ -250,7 +253,42 @@ class MainView(SensorView):
 
     title = "Overview"
 
+    def draw_info(self, x, y, color, label, data, desc, right=False):
+        w = 100
+        o_x = 0 if right else 20
+        self._draw.text(
+            (x + w + o_x, y),
+            data,
+            font=self.font_large,
+            fill=color,
+            anchor="rt"
+        )
+        self._draw.text(
+            (x + w + o_x, y + 45),
+            desc,
+            font=self.font,
+            fill=COLOR_WHITE,
+            anchor="rt"
+        )
+        label_img = Image.new("RGB", (65, 20))
+        label_draw = ImageDraw.Draw(label_img)
+        label_draw.text((0, 20) if right else (0, 0), label, font=self.font_medium, fill=COLOR_GREY, anchor="lb" if right else "lt")
+        label_img = label_img.rotate(90, expand=True)
+        if right:
+            self._image.paste(label_img, (x + w, y))
+        else:
+            self._image.paste(label_img, (x, y))
+
     def render_view(self):
+        self.draw_info(0, 0, (20, 20, 220), "RAIN", "{:2.0f}".format(self._data.rain_mm_sec), "mm/s")
+        self.draw_info(0, 75, (20, 20, 220), "PRES", "{:2.0f}".format(self._data.pressure), "mbar")
+        self.draw_info(0, 150, (20, 100, 220), "TEMP", "{:2.0f}".format(self._data.temperature), "°C")
+
+        self.draw_info(120, 0, (220, 20, 220), "WIND", "{:2.0f}".format(self._data.wind_kmph), "m/s", True)
+        self.draw_info(120, 75, (220, 100, 20), "LIGHT", "{:2.0f}".format(self._data.lux), "lux", True)
+        self.draw_info(120, 150, (10, 10, 220), "HUM", "{:2.0f}".format(self._data.humidity), "%rh", True)
+
+        """
         self._draw.text(
             (0, 40),
             "Temperature: {:0.2f}C".format(self._data.temperature),
@@ -289,6 +327,7 @@ class MainView(SensorView):
             font=self.font_small,
             fill=COLOR_WHITE
         )
+        """
 
 
 class SettingsView(View):
