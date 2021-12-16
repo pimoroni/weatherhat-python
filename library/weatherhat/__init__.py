@@ -53,8 +53,86 @@ wind_direction_to_degrees = {
 }
 
 
+class History:
+    def __init__(self, average_over=100, history_depth=1200):
+        self._history = [0]
+        self.average_over = average_over
+        self.history_depth = history_depth
+
+    def append(self, value):
+        self._history += [value]
+        buffer_depth = max(self.average_over, self.history_depth)
+        self._history = self._history[-buffer_depth:]  # Prune the buffer
+
+    def average(self, average_over=None):
+        if average_over is None:
+            average_over = self.average_over
+        return sum(self._history[-self.average_over:]) / float(average_over)
+
+    def latest(self):
+        return self._history[-1]
+
+    def history(self, depth=None):
+        if depth is None:
+            depth = self.history_depth
+        else:
+            depth = min(self.history_depth, depth)
+        return self._history[-self.history_depth:]
+
+
+class WindSpeedHistory(History):
+    def cms_to_kmph(self, cms):
+        return (cms * 60 * 60) / 1000.0 / 100.0
+
+    def latest_kmph(self):
+        return self.cms_to_kmph(self.latest())
+
+    def average_kmph(self, average_over=None):
+        if average_over is None:
+            average_over = self.average_over
+        return sum([self.cms_to_kmph(v) for v in self._history[-self.average_over:]]) / float(average_over)
+
+    def cms_to_mph(self, cms):
+        return ((cms * 60 * 60) / 1000.0 / 100.0) * 0.621371
+
+    def latest_mph(self):
+        return self.cms_to_mph(self.latest())
+
+    def average_mph(self, average_over=None):
+        if average_over is None:
+            average_over = self.average_over
+        return sum([self.cms_to_mph(v) for v in self._history[-self.average_over:]]) / float(average_over)
+
+    def cms_to_ms(self, cms):
+        return (cms * 60 * 60) / 1000.0
+
+    def latest_ms(self):
+        return self.cms_to_ms(self.latest())
+
+    def average_ms(self, average_over=None):
+        if average_over is None:
+            average_over = self.average_over
+        return sum([self.cms_to_ms(v) for v in self._history[-self.average_over:]]) / float(average_over)
+
+
+class WindDirectionHistory(History):
+    def degrees_to_cardinal(self, degrees):
+        value, cardinal = min(wind_degrees_to_cardinal.items(), key=lambda item: abs(item[0] - degrees))
+        return cardinal
+
+    def average_compass(self, average_over):
+        return self.degrees_to_cardinal(self.average(average_over))
+
+    def latest_compass(self):
+        return self.degrees_to_cardinal(self.latest())
+
+    def history_compass(self, depth=None):
+        return [self.degrees_to_cardinal(v) for v in History.history(self, depth)]
+
+
+
 class WeatherHAT:
-    def __init__(self):
+    def __init__(self, average_over=120, wind_average_over=60):
         self._lock = threading.Lock()
         self._i2c_dev = SMBus(1)
 
@@ -89,38 +167,24 @@ class WeatherHAT:
         self._ioe.on_interrupt(self.handle_ioe_interrupt)
         self._ioe.clear_interrupt()
 
-        self._avg_wind_speed = []
-        self._avg_wind_direction = []
-
         # Data API... kinda
         self.temperature_offset = -7.5
         self.device_temperature = 0
-        self.temperature = 0
-        self.temperature_history = []
+        self.temperature = History(average_over)
 
-        self.pressure = 0
-        self.pressure_history = []
+        self.pressure = History(average_over)
 
-        self.humidity = 0
-        self.absolute_humidity = 0
-        self.humidity_history = []
-        self.dewpoint = 0
+        self.humidity = History(average_over)
+        self.relative_humidity = History(average_over)
+        self.dewpoint = History(average_over)
 
-        self.lux = 0
-        self.lux_history = []
+        self.lux = History(average_over)
 
-        self.wind_mph = 0
-        self.wind_mph_avg = 0
-        self.wind_kmph = 0
-        self.wind_speed_history = []
+        self.wind_speed = WindSpeedHistory(wind_average_over)
+        self.wind_direction = WindDirectionHistory(wind_average_over)
 
-        self.wind_degrees = 0
-        self.wind_degrees_avg = 0
-        self.wind_direction_history = []
-
-        self.rain_mm_sec = 0
-        self.rain_mm_total = 0
-        self.rain_history = []
+        self.rain_mm_total = History(average_over)
+        self.rain_mm_sec = History(average_over)
 
         self.reset_counts()
 
@@ -158,7 +222,7 @@ class WeatherHAT:
         value, cardinal = min(wind_degrees_to_cardinal.items(), key=lambda item: abs(item[0] - degrees))
         return cardinal
 
-    def update(self, interval=60.0, history_depth=120, wind_direction_samples=60):
+    def update(self, interval=60.0):
         # Time elapsed since last update
         delta = time.time() - self._t_start
 
@@ -169,36 +233,24 @@ class WeatherHAT:
         # TODO make update interval for sensors fixed so history always represents a known period
 
         self.device_temperature = self._bme280.get_temperature()
-        self.temperature = self.device_temperature + self.temperature_offset
-        self.temperature_history.append(self.temperature)
-        self.temperature_history = self.temperature_history[-history_depth:]
+        self.temperature.append(self.device_temperature + self.temperature_offset)
 
-        self.pressure = self._bme280.get_pressure()
-        self.pressure_history.append(self.pressure)
-        self.pressure_history = self.pressure_history[-history_depth:]
+        self.pressure.append(self._bme280.get_pressure())
 
-        self.absolute_humidity = self._bme280.get_humidity()
-        self.humidity = self.compensate_humidity(self.absolute_humidity, self.device_temperature, self.temperature)
-        self.humidity_history.append(self.humidity)
-        self.humidity_history = self.humidity_history[-history_depth:]
-        self.dewpoint = self.get_dewpoint(self.humidity, self.device_temperature)
+        humidity = self._bme280.get_humidity()
+        self.humidity.append(humidity)
+        self.relative_humidity.append(self.compensate_humidity(humidity, self.device_temperature, self.device_temperature + self.temperature_offset))
 
-        self.lux = self._ltr559.get_lux()
-        self.lux_history.append(self.lux)
-        self.lux_history = self.lux_history[-history_depth:]
+        self.dewpoint.append(self.get_dewpoint(humidity, self.device_temperature))
+
+        self.lux.append(self._ltr559.get_lux())
 
         wind_direction = self._ioe.input(PIN_WV)
 
         self._lock.release()
 
         value, self.wind_degrees = min(wind_direction_to_degrees.items(), key=lambda item: abs(item[0] - wind_direction))
-        self._avg_wind_direction.append(self.wind_degrees)
-        # Discard old wind directon samples
-        self._avg_wind_direction = self._avg_wind_direction[-wind_direction_samples:]
-        self.wind_degrees_avg = sum(self._avg_wind_direction) / len(self._avg_wind_direction)
-
-        self.wind_direction_history.append(self.wind_degrees_avg)
-        self.wind_direction_history = self.wind_direction_history[-history_depth:]
+        self.wind_direction.append(self.wind_degrees)
 
         # Don't update rain/wind data until we've sampled for long enough
         if delta < interval:
@@ -214,18 +266,10 @@ class WeatherHAT:
 
         wind_hz /= 2.0  # Two pulses per rotation
         wind_cms = wind_hz * ANE_CIRCUMFERENCE * ANE_FACTOR
-        self.wind_kmph = (wind_cms * 60 * 60) / 100.0 / 1000.0
-        self.wind_mph = max(0, self.wind_kmph * 0.621371)
-        self._avg_wind_speed.append(self.wind_mph)
+        self.wind_speed.append(wind_cms)
 
-        self.wind_mph_avg = sum(self._avg_wind_speed) / len(self._avg_wind_speed)
-
-        self.wind_speed_history.append(self.wind_mph_avg)
-
-        self.rain_mm_sec = rain_hz * RAIN_MM_PER_TICK
-        self.rain_mm_total = self._rain_counts * RAIN_MM_PER_TICK
-        self.rain_history.append(self.rain_mm_sec)
-        self.rain_history = self.rain_history[-history_depth:]
+        self.rain_mm_total.append(self._rain_counts * RAIN_MM_PER_TICK)
+        self.rain_mm_sec.append(self._rain_counts * RAIN_MM_PER_TICK)
 
     def handle_ioe_interrupt(self, pin):
         self._lock.acquire(blocking=True)
