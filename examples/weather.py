@@ -16,6 +16,7 @@ from fonts.ttf import ManropeMedium as UserFont
 from PIL import Image, ImageDraw, ImageFont
 
 import weatherhat
+from weatherhat import history
 
 
 FPS = 10
@@ -223,7 +224,7 @@ class SensorView(View):
 
         max_values = int(width / bar_width)
 
-        values = values[-max_values:]
+        values = [entry.value for entry in values[-max_values:]]
 
         for i, v in enumerate(values):
             v = min(vmax, max(vmin, v))
@@ -280,13 +281,13 @@ class MainView(SensorView):
             self._image.paste(label_img, (x, y))
 
     def render_view(self):
-        self.draw_info(0, 0, (20, 20, 220), "RAIN", "{:2.0f}".format(self._data.rain_mm_sec.latest()), "mm/s")
-        self.draw_info(0, 75, (20, 20, 220), "PRES", "{:2.0f}".format(self._data.pressure.latest()), "mbar")
-        self.draw_info(0, 150, (20, 100, 220), "TEMP", "{:2.0f}".format(self._data.temperature.latest()), "°C")
+        self.draw_info(0, 0, (20, 20, 220), "RAIN", "{:2.0f}".format(self._data.rain_mm_sec.latest().value), "mm/s")
+        self.draw_info(0, 75, (20, 20, 220), "PRES", "{:2.0f}".format(self._data.pressure.latest().value), "mbar")
+        self.draw_info(0, 150, (20, 100, 220), "TEMP", "{:2.0f}".format(self._data.temperature.latest().value), "°C")
 
         self.draw_info(120, 0, (220, 20, 220), "WIND", "{:2.0f}".format(self._data.wind_speed.latest_ms()), "m/s", True)
-        self.draw_info(120, 75, (220, 100, 20), "LIGHT", "{:2.0f}".format(self._data.lux.latest()), "lux", True)
-        self.draw_info(120, 150, (10, 10, 220), "HUM", "{:2.0f}".format(self._data.relative_humidity.latest()), "%rh", True)
+        self.draw_info(120, 75, (220, 100, 20), "LIGHT", "{:2.0f}".format(self._data.lux.latest().value), "lux", True)
+        self.draw_info(120, 150, (10, 10, 220), "HUM", "{:2.0f}".format(self._data.relative_humidity.latest().value), "%rh", True)
 
         """
         self._draw.text(
@@ -465,36 +466,55 @@ class WindDirectionView(SensorView):
 
     def __init__(self, image, sensordata, settings=None):
         SensorView.__init__(self, image, sensordata, settings)
-        self.needle_trail = []
 
     def render_view(self):
         ox = DISPLAY_WIDTH / 2
         oy = (DISPLAY_HEIGHT - 30) / 2 + 30
-        needle = math.radians(self._data.wind_direction.average())
-        # Track previous average values to give the compass a trail
-        self.needle_trail.append(needle)
-        self.needle_trail = self.needle_trail[-120:]
+        needle = self._data.needle
+        speed = self._data.wind_speed.average_mph(60)
+        gust = self._data.wind_speed.gust_mph()
 
         radius = 50
+        speed_max = 10 # mph
+        speed = min(speed, speed_max)
+        speed /= float(speed_max)
 
+        arrow_radius_min = 10
+        arrow_radius_max = 30
+        arrow_radius = (speed * (arrow_radius_max - arrow_radius_min)) + arrow_radius_min
+        arrow_angle = math.radians(130)
+
+        tx, ty = ox + math.sin(needle) * (radius - arrow_radius), oy - math.cos(needle) * (radius - arrow_radius)
+        ax, ay = ox + math.sin(needle) * (radius - arrow_radius), oy - math.cos(needle) * (radius - arrow_radius)
+
+        arrow_xy_a = ax + math.sin(needle - arrow_angle) * arrow_radius, ay - math.cos(needle - arrow_angle) * arrow_radius
+        arrow_xy_b = ax + math.sin(needle) * arrow_radius, ay - math.cos(needle) * arrow_radius
+        arrow_xy_c = ax + math.sin(needle + arrow_angle) * arrow_radius, ay - math.cos(needle + arrow_angle) * arrow_radius
+
+        # Compass red end
         self._draw.line((
             ox,
             oy,
-            ox + math.sin(needle) * radius,
-            oy - math.cos(needle) * radius
+            tx,
+            ty
         ), (255, 0, 0), 5)
 
+        # Compass white end
+        """
         self._draw.line((
             ox,
             oy,
             ox + math.sin(needle - math.pi) * radius,
             oy - math.cos(needle - math.pi) * radius
         ), (255, 255, 255), 5)
+        """
+
+        self._draw.polygon([arrow_xy_a, arrow_xy_b, arrow_xy_c], fill=(255, 0, 0))
 
         if self._settings.wind_trails:
             trails = 40
-            trail_length = len(self.needle_trail)
-            for i, p in enumerate(self.needle_trail):
+            trail_length = len(self._data.needle_trail)
+            for i, p in enumerate(self._data.needle_trail):
                 # r = radius
                 r = radius + trails - (float(i) / trail_length * trails)
                 x = ox + math.sin(p) * r
@@ -514,12 +534,12 @@ class WindDirectionView(SensorView):
             y -= th / 2
             self._draw.text((x, y), name, font=self.font_small, fill=COLOR_WHITE)
 
-        speed_text = "{:0.2f}mph".format(self._data.wind_speed.latest_mph())
+        speed_text = "{:0.2f}mph {:0.2f}mph".format(speed, gust)
         tw, th = self._draw.textsize(speed_text, font=self.font_small)
 
         self._draw.text(
             (DISPLAY_WIDTH - tw, DISPLAY_HEIGHT - th),
-            "{:0.2f}mph".format(self._data.wind_speed.latest_mph()),
+            speed_text,
             font=self.font_small,
             fill=COLOR_WHITE
         )
@@ -562,7 +582,7 @@ class RainView(SensorView):
     def render_view(self):
         self._draw.text(
             (0, 220),
-            "Rain: {:0.2f}mm/sec".format(self._data.rain_mm_sec.latest()),
+            "Rain: {:0.2f}mm/sec".format(self._data.rain_mm_sec.latest().value),
             font=self.font,
             fill=COLOR_WHITE
         )
@@ -591,7 +611,7 @@ class TPHView(SensorView):
     def render_view(self):
         self._draw.text(
             (0, 220),
-            "Temperature: {:0.2f}C".format(self._data.temperature.latest()),
+            "Temperature: {:0.2f}C".format(self._data.temperature.latest().value),
             font=self.font,
             fill=COLOR_WHITE
         )
@@ -620,7 +640,7 @@ class LightView(SensorView):
     def render_view(self):
         self._draw.text(
             (0, 220),
-            "Light: {:0.2f}lux".format(self._data.lux.latest()),
+            "Light: {:0.2f}lux".format(self._data.lux.latest().value),
             font=self.font,
             fill=COLOR_WHITE
         )
@@ -756,6 +776,57 @@ class Config:
                 setattr(self, k, config[k])
 
 
+class SensorData:
+    AVERAGE_SAMPLES = 120
+    WIND_DIRECTION_AVERAGE_SAMPLES = 60
+    COMPASS_TRAIL_SIZE = 120
+
+    def __init__(self):
+        self.sensor = weatherhat.WeatherHAT()
+
+        self.temperature = history.History()
+
+        self.pressure = history.History()
+
+        self.humidity = history.History()
+        self.relative_humidity = history.History()
+        self.dewpoint = history.History()
+
+        self.lux = history.History()
+
+        self.wind_speed = history.WindSpeedHistory()
+        self.wind_direction = history.WindDirectionHistory()
+
+        self.rain_mm_total = history.History()
+        self.rain_mm_sec = history.History()
+
+        # Track previous average values to give the compass a trail
+        self.needle_trail = []
+
+    def update(self, interval=5.0):
+        self.sensor.update(interval)
+
+        self.temperature.append(self.sensor.temperature)
+
+        self.pressure.append(self.sensor.pressure)
+
+        self.humidity.append(self.sensor.humidity)
+        self.relative_humidity.append(self.sensor.relative_humidity)
+        self.dewpoint.append(self.sensor.dewpoint)
+
+        self.lux.append(self.sensor.lux)
+
+        self.wind_speed.append(self.sensor.wind_speed)
+        self.wind_direction.append(self.sensor.wind_direction)
+
+        self.rain_mm_total.append(self.sensor.rain_mm_total)
+        self.rain_mm_sec.append(self.sensor.rain_mm_sec)
+
+        self.needle = math.radians(self.wind_direction.average(self.WIND_DIRECTION_AVERAGE_SAMPLESIZE))
+        self.needle_trail.append(self.needle)
+        self.needle_trail = self.needle_trail[-self.COMPASS_TRAIL_SIZE:]
+
+
 def main():
     def handle_button(pin):
         index = BUTTONS.index(pin)
@@ -791,7 +862,7 @@ def main():
     for pin in BUTTONS:
         GPIO.add_event_detect(pin, GPIO.FALLING, handle_button, bouncetime=200)
 
-    sensordata = weatherhat.WeatherHAT()
+    sensordata = SensorData()
 
     settings = Config()
 
@@ -858,6 +929,7 @@ def main():
         ]        
     )
 
+    viewcontroller.button_a()
     while True:
         sensordata.update(interval=5.0)
         viewcontroller.update()
