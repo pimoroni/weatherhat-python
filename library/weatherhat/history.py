@@ -53,7 +53,7 @@ class History:
 
     def history(self, depth=None):
         if depth is None:
-            depth = self.history_depth
+            return self._history
         depth = min(depth, len(self._history))
         return self._history[-depth:]
 
@@ -90,6 +90,11 @@ class WindSpeedHistory(History):
 
     def average_ms(self, sample_over=None):
         return self.cms_to_ms(self.average(sample_over))
+
+    def gust_ms(self, seconds=3.0):
+        cut_off_time = time.time() - seconds
+        samples = [entry.value for entry in self.history() if entry.timestamp >= cut_off_time]
+        return self.cms_to_ms(max(samples))
 
 
 class WindDirectionHistory(History):

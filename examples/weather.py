@@ -9,7 +9,6 @@ import time
 
 import yaml
 
-import ltr559
 import RPi.GPIO as GPIO
 import ST7789
 from fonts.ttf import ManropeMedium as UserFont
@@ -54,7 +53,7 @@ class View:
         self._image = image
         self._draw = ImageDraw.Draw(image)
 
-        self.font_large = ImageFont.truetype(UserFont, 50)
+        self.font_large = ImageFont.truetype(UserFont, 40)
         self.font = ImageFont.truetype(UserFont, 25)
         self.font_medium = ImageFont.truetype(UserFont, 22)
         self.font_small = ImageFont.truetype(UserFont, 14)
@@ -192,6 +191,7 @@ class View:
 
 class SensorView(View):
     title = ""
+    GRAPH_BAR_WIDTH = 10
 
     def __init__(self, image, sensordata, settings=None):
         View.__init__(self, image)
@@ -214,6 +214,30 @@ class SensorView(View):
         blend_b = factor
         blend_a = 1.0 - factor
         return tuple([int((a[i] * blend_a) + (b[i] * blend_b)) for i in range(3)])
+
+    def heading(self, data, units):
+        if data < 100:
+            data = "{:0.1f}".format(data)
+        else:
+            data = "{:0.0f}".format(data)
+
+        tw, th = self._draw.textsize(data, self.font_large)
+
+        self._draw.text(
+            (0, 0),
+            data,
+            font=self.font_large,
+            fill=COLOR_WHITE,
+            anchor="lt"
+        )
+
+        self._draw.text(
+            (tw, th - 14),
+            units,
+            font=self.font_medium,
+            fill=COLOR_WHITE,
+            anchor="lb"
+        )
 
     def graph(self, values, graph_x=0, graph_y=0, width=DISPLAY_WIDTH, height=DISPLAY_HEIGHT, vmin=0, vmax=1.0, bar_width=2, colors=None):
         if not len(values):
@@ -241,7 +265,7 @@ class SensorView(View):
             h = scale * height
             self._draw.rectangle((
                 graph_x + x, graph_y + height - h,
-                graph_x + x, graph_y + height
+                graph_x + x + int(bar_width / 2), graph_y + height
             ), fill=bar_color)
 
 
@@ -257,8 +281,14 @@ class MainView(SensorView):
     def draw_info(self, x, y, color, label, data, desc, right=False):
         w = 100
         o_x = 0 if right else 20
+
+        if data < 100:
+            data = "{:0.1f}".format(data)
+        else:
+            data = "{:0.0f}".format(data)
+
         self._draw.text(
-            (x + w + o_x, y),
+            (x + w + o_x, y + 10),
             data,
             font=self.font_large,
             fill=color,
@@ -281,13 +311,13 @@ class MainView(SensorView):
             self._image.paste(label_img, (x, y))
 
     def render_view(self):
-        self.draw_info(0, 0, (20, 20, 220), "RAIN", "{:2.0f}".format(self._data.rain_mm_sec.latest().value), "mm/s")
-        self.draw_info(0, 75, (20, 20, 220), "PRES", "{:2.0f}".format(self._data.pressure.latest().value), "mbar")
-        self.draw_info(0, 150, (20, 100, 220), "TEMP", "{:2.0f}".format(self._data.temperature.latest().value), "°C")
+        self.draw_info(0, 0, (20, 20, 220), "RAIN", self._data.rain_mm_sec.latest().value, "mm/s")
+        self.draw_info(0, 75, (20, 20, 220), "PRES", self._data.pressure.latest().value, "mbar")
+        self.draw_info(0, 150, (20, 100, 220), "TEMP", self._data.temperature.latest().value, "°C")
 
-        self.draw_info(120, 0, (220, 20, 220), "WIND", "{:2.0f}".format(self._data.wind_speed.latest_ms()), "m/s", True)
-        self.draw_info(120, 75, (220, 100, 20), "LIGHT", "{:2.0f}".format(self._data.lux.latest().value), "lux", True)
-        self.draw_info(120, 150, (10, 10, 220), "HUM", "{:2.0f}".format(self._data.relative_humidity.latest().value), "%rh", True)
+        self.draw_info(120, 0, (220, 20, 220), "WIND", self._data.wind_speed.latest_ms(), "m/s", True)
+        self.draw_info(120, 75, (220, 100, 20), "LIGHT", self._data.lux.latest().value, "lux", True)
+        self.draw_info(120, 150, (10, 10, 220), "HUM", self._data.relative_humidity.latest().value, "%rh", True)
 
         """
         self._draw.text(
@@ -469,14 +499,15 @@ class WindDirectionView(SensorView):
 
     def render_view(self):
         ox = DISPLAY_WIDTH / 2
-        oy = (DISPLAY_HEIGHT - 30) / 2 + 30
+        oy = 20 + ((DISPLAY_HEIGHT - 20) / 2)
         needle = self._data.needle
-        speed = self._data.wind_speed.average_mph(60)
-        gust = self._data.wind_speed.gust_mph()
+        speed_ms = self._data.wind_speed.average_ms(60)
+        gust_ms = self._data.wind_speed.gust_ms()
+        compass_direction = self._data.wind_direction.average_compass()
 
         radius = 50
-        speed_max = 10 # mph
-        speed = min(speed, speed_max)
+        speed_max = 4.4 # m/s
+        speed = min(speed_ms, speed_max)
         speed /= float(speed_max)
 
         arrow_radius_min = 10
@@ -534,14 +565,16 @@ class WindDirectionView(SensorView):
             y -= th / 2
             self._draw.text((x, y), name, font=self.font_small, fill=COLOR_WHITE)
 
-        speed_text = "{:0.2f}mph {:0.2f}mph".format(speed, gust)
-        tw, th = self._draw.textsize(speed_text, font=self.font_small)
+        self.heading(speed_ms, "m/s")
+
+        direction_text = "".join(filter(lambda d: d in "NSEW", compass_direction))
 
         self._draw.text(
-            (DISPLAY_WIDTH - tw, DISPLAY_HEIGHT - th),
-            speed_text,
-            font=self.font_small,
-            fill=COLOR_WHITE
+            (DISPLAY_WIDTH, 0),
+            direction_text,
+            font=self.font_large,
+            fill=COLOR_WHITE,
+            anchor="rt"
         )
 
 
@@ -551,22 +584,20 @@ class WindSpeedView(SensorView):
     title = "Wind Speed"
 
     def render_view(self):
-        self._draw.text(
-            (0, 220),
-            "Speed: {:0.2f}mph".format(self._data.wind_speed.latest_mph()),
-            font=self.font,
-            fill=COLOR_WHITE
+        self.heading(
+            self._data.wind_speed.latest_ms(),
+            "m/s"
         )
 
         self.graph(
             self._data.wind_speed.history(),
             graph_x=0,
-            graph_y=30,
+            graph_y=35,
             width=DISPLAY_WIDTH,
-            height=DISPLAY_HEIGHT - 30,
+            height=DISPLAY_HEIGHT - 35,
             vmin=0,
             vmax=20,
-            bar_width=2
+            bar_width=self.GRAPH_BAR_WIDTH
         )
 
 
@@ -580,22 +611,20 @@ class RainView(SensorView):
     title = "Rain"
 
     def render_view(self):
-        self._draw.text(
-            (0, 220),
-            "Rain: {:0.2f}mm/sec".format(self._data.rain_mm_sec.latest().value),
-            font=self.font,
-            fill=COLOR_WHITE
+        self.heading(
+            self._data.rain_mm_sec.latest().value,
+            "mm/s"
         )
 
         self.graph(
             self._data.rain_mm_sec.history(),
             graph_x=0,
-            graph_y=0,
+            graph_y=35,
             width=DISPLAY_WIDTH,
-            height=DISPLAY_HEIGHT,
+            height=DISPLAY_HEIGHT - 35,
             vmin=0,
             vmax=1.0,
-            bar_width=2
+            bar_width=self.GRAPH_BAR_WIDTH
         )
 
 
@@ -609,22 +638,20 @@ class TPHView(SensorView):
     title = "BME280: Environment"
 
     def render_view(self):
-        self._draw.text(
-            (0, 220),
-            "Temperature: {:0.2f}C".format(self._data.temperature.latest().value),
-            font=self.font,
-            fill=COLOR_WHITE
+        self.heading(
+            self._data.temperature.latest().value,
+            "°C"
         )
 
         self.graph(
             self._data.temperature.history(),
             graph_x=0,
-            graph_y=0,
+            graph_y=35,
             width=DISPLAY_WIDTH,
-            height=DISPLAY_HEIGHT,
+            height=DISPLAY_HEIGHT - 35,
             vmin=self._settings.minimum_temperature,
             vmax=self._settings.maximum_temperature,
-            bar_width=2
+            bar_width=self.GRAPH_BAR_WIDTH
         )
 
 
@@ -635,25 +662,23 @@ class TPHSettingsView(SettingsView):
 class LightView(SensorView):
     """Light."""
 
-    title = "LTR559: LIght"
+    title = "LTR559: Light"
 
     def render_view(self):
-        self._draw.text(
-            (0, 220),
-            "Light: {:0.2f}lux".format(self._data.lux.latest().value),
-            font=self.font,
-            fill=COLOR_WHITE
+        self.heading(
+            self._data.lux.latest().value,
+            "lux"
         )
 
         self.graph(
-            self._data.lux.history(10),
+            self._data.lux.history(int(DISPLAY_WIDTH / self.GRAPH_BAR_WIDTH)),
             graph_x=0,
-            graph_y=30,
+            graph_y=35,
             width=DISPLAY_WIDTH,
-            height=DISPLAY_HEIGHT - 50,
+            height=DISPLAY_HEIGHT - 35,
             vmin=0,
-            vmax=200,
-            bar_width=2
+            vmax=1000,
+            bar_width=self.GRAPH_BAR_WIDTH
         )
 
 
@@ -822,7 +847,7 @@ class SensorData:
         self.rain_mm_total.append(self.sensor.rain_mm_total)
         self.rain_mm_sec.append(self.sensor.rain_mm_sec)
 
-        self.needle = math.radians(self.wind_direction.average(self.WIND_DIRECTION_AVERAGE_SAMPLESIZE))
+        self.needle = math.radians(self.wind_direction.average(self.WIND_DIRECTION_AVERAGE_SAMPLES))
         self.needle_trail.append(self.needle)
         self.needle_trail = self.needle_trail[-self.COMPASS_TRAIL_SIZE:]
 
@@ -929,12 +954,16 @@ def main():
         ]        
     )
 
-    viewcontroller.button_a()
+    #viewcontroller.button_a()
     while True:
         sensordata.update(interval=5.0)
         viewcontroller.update()
         viewcontroller.render()
         display.display(image.convert("RGB"))
+
+        if display.get_key() == "Right":
+            viewcontroller.button_a()
+
         settings.save()
         time.sleep(1.0 / FPS)
 
