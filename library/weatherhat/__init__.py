@@ -150,7 +150,7 @@ class WeatherHAT:
 
         self.pressure = self._bme280.get_pressure()
         self.humidity = self._bme280.get_humidity()
-    
+
         self.relative_humidity = self.compensate_humidity(self.humidity, self.device_temperature, self.temperature)
 
         self.dewpoint = self.get_dewpoint(self.humidity, self.device_temperature)
@@ -180,7 +180,7 @@ class WeatherHAT:
         self.wind_speed = wind_cms
 
         self.rain_mm_total = self._rain_counts * RAIN_MM_PER_TICK
-        self.rain_mm_sec = self._rain_counts * RAIN_MM_PER_TICK
+        self.rain_mm_sec = rain_hz * RAIN_MM_PER_TICK
 
     def handle_ioe_interrupt(self, pin):
         self._lock.acquire(blocking=True)
@@ -212,4 +212,3 @@ class WeatherHAT:
         # print(wind_counts, rain_counts, self._wind_counts, self._rain_counts)
 
         self._lock.release()
-

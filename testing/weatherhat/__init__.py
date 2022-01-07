@@ -107,7 +107,7 @@ class WeatherHAT:
 
         self.pressure = 1000.0 + math.sin(time.time() / 10.0) * 100.0
         self.humidity = 50 + math.sin(time.time() / 10.0) * 25.0
-    
+
         self.relative_humidity = self.compensate_humidity(self.humidity, self.device_temperature, self.temperature)
 
         self.dewpoint = self.get_dewpoint(self.humidity, self.device_temperature)
@@ -141,4 +141,3 @@ class WeatherHAT:
 
         self.rain_mm_total = self._rain_counts * RAIN_MM_PER_TICK
         self.rain_mm_sec = rain_hz * RAIN_MM_PER_TICK
-

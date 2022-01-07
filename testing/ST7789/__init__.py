@@ -1,11 +1,12 @@
 import tkinter
-from PIL import ImageTk, Image
+from PIL import ImageTk
 
 import pathlib
 import sys
 modpath = pathlib.Path("../").resolve()
 sys.path.insert(0, str(modpath))
-import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO  # noqa: E402
+
 
 class ST7789:
     def __init__(
@@ -15,8 +16,9 @@ class ST7789:
         cs=1,
         dc=9,
         backlight=13,
-        spi_speed_hz=0):
-        
+        spi_speed_hz=0
+    ):
+
         self._tk_done = False
         self.tk_root = tkinter.Tk()
         self.tk_root.title('Weather HAT')
@@ -62,7 +64,6 @@ class ST7789:
             pin = buttons[index]
             GPIO.handlers[pin][0](pin)
 
-
     def display(self, image):
         self.disp_img_copy = image.copy()
         self.photo = ImageTk.PhotoImage(self.disp_img_copy.resize((self.cvw, self.cvh)))
@@ -77,4 +78,3 @@ class ST7789:
         self.cvhandle = self.cv.create_image(0, 0, image=self.photo, anchor='nw')
 
         self.tk_root.update()
- 

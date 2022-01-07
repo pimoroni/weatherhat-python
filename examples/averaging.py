@@ -59,4 +59,3 @@ Wind (avg):  Avg: Now: {wind_direction.average(60):0.2f} degrees ({wind_directio
 """)
 
     time.sleep(5.0)
-

@@ -29,4 +29,3 @@ Wind (avg):  {sensor.wind_direction:0.2f} degrees ({wind_direction_cardinal})
 """)
 
     time.sleep(10.0)
-

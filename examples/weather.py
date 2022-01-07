@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
-import logging
 import math
 import pathlib
-import random
-import sys
-import threading
 import time
 
 import yaml
@@ -135,7 +131,7 @@ class View:
 
         # Given a rectangle, reflow and scale text to fit, centred
         while font.size > 0:
-            space_width = font.getsize(" ")[0]
+            # space_width = font.getsize(" ")[0]
             line_height = int(font.size * line_spacing)
             max_lines = math.floor(height / line_height)
             lines = []
@@ -146,22 +142,14 @@ class View:
             while len(lines) < max_lines and len(words) > 0:
                 line = []
 
-                while (
-                    len(words) > 0
-                    and font.getsize(" ".join(line + [words[0]]))[0] <= width
-                ):
+                while (len(words) > 0 and font.getsize(" ".join(line + [words[0]]))[0] <= width):
                     line.append(words.pop(0))
 
                 lines.append(" ".join(line))
 
             if len(lines) <= max_lines and len(words) == 0:
                 # Solution is found, render the text.
-                y = int(
-                    y1
-                    + (height / 2)
-                    - (len(lines) * line_height / 2)
-                    - (line_height - font.size) / 2
-                )
+                y = int(y1 + (height / 2) - (len(lines) * line_height / 2) - (line_height - font.size) / 2)
 
                 bounds = [x2, y, x1, y + len(lines) * line_height]
 
@@ -204,7 +192,7 @@ class SensorView(View):
 
     def render(self):
         self.clear()
-        #self.banner(self.title)
+        # self.banner(self.title)
         self.render_view()
 
     def render_view(self):
@@ -363,7 +351,7 @@ class SettingsView(View):
         fmt = option.get("format", "{value}")
         if type(fmt) is str:
             text = fmt.format(value=value)
-        else:    
+        else:
             text = option["format"](value)
         mode = option.get("mode", "int")
         help = option["help"]
@@ -476,11 +464,11 @@ class WindDirectionView(SensorView):
         oy = 20 + ((DISPLAY_HEIGHT - 20) / 2)
         needle = self._data.needle
         speed_ms = self._data.wind_speed.average_ms(60)
-        gust_ms = self._data.wind_speed.gust_ms()
+        # gust_ms = self._data.wind_speed.gust_ms()
         compass_direction = self._data.wind_direction.average_compass()
 
         radius = 50
-        speed_max = 4.4 # m/s
+        speed_max = 4.4  # m/s
         speed = min(speed_ms, speed_max)
         speed /= float(speed_max)
 
@@ -533,7 +521,7 @@ class WindDirectionView(SensorView):
             x = ox + math.sin(p) * radius
             y = oy - math.cos(p) * radius
 
-            name = "".join([l[0] for l in name.split(" ")])
+            name = "".join([word[0] for word in name.split(" ")])
             tw, th = self._draw.textsize(name, font=self.font_small)
             x -= tw / 2
             y -= th / 2
@@ -541,7 +529,7 @@ class WindDirectionView(SensorView):
 
         self.heading(speed_ms, "m/s")
 
-        direction_text = "".join(filter(lambda d: d in "NSEW", compass_direction))
+        direction_text = "".join([word[0] for word in compass_direction.split(" ")])
 
         self._draw.text(
             (DISPLAY_WIDTH, 0),
@@ -925,10 +913,9 @@ def main():
                 LightView(image, sensordata, settings),
                 LightSettingsView(image),
             ),
-        ]        
+        ]
     )
 
-    #viewcontroller.button_a()
     while True:
         sensordata.update(interval=5.0)
         viewcontroller.update()
