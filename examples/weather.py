@@ -7,7 +7,7 @@ import yaml
 
 import RPi.GPIO as GPIO
 import ST7789
-from fonts.ttf import ManropeMedium as UserFont
+from fonts.ttf import ManropeBold as UserFont
 from PIL import Image, ImageDraw, ImageFont
 
 import weatherhat
@@ -226,6 +226,9 @@ class SensorView(View):
             fill=COLOR_WHITE,
             anchor="lb"
         )
+
+    def footer(self, label):
+        self._draw.text((int(DISPLAY_WIDTH / 2), DISPLAY_HEIGHT - 15), label, font=self.font_medium, fill=COLOR_GREY, anchor="mm")
 
     def graph(self, values, graph_x=0, graph_y=0, width=DISPLAY_WIDTH, height=DISPLAY_HEIGHT, vmin=0, vmax=1.0, bar_width=2, colors=None):
         if not len(values):
@@ -461,13 +464,13 @@ class WindDirectionView(SensorView):
 
     def render_view(self):
         ox = DISPLAY_WIDTH / 2
-        oy = 20 + ((DISPLAY_HEIGHT - 20) / 2)
+        oy = 20 + ((DISPLAY_HEIGHT - 30) / 2)
         needle = self._data.needle
         speed_ms = self._data.wind_speed.average_ms(60)
         # gust_ms = self._data.wind_speed.gust_ms()
         compass_direction = self._data.wind_direction.average_compass()
 
-        radius = 50
+        radius = 40
         speed_max = 4.4  # m/s
         speed = min(speed_ms, speed_max)
         speed /= float(speed_max)
@@ -525,9 +528,10 @@ class WindDirectionView(SensorView):
             tw, th = self._draw.textsize(name, font=self.font_small)
             x -= tw / 2
             y -= th / 2
-            self._draw.text((x, y), name, font=self.font_small, fill=COLOR_WHITE)
+            self._draw.text((x, y), name, font=self.font_small, fill=COLOR_GREY)
 
         self.heading(speed_ms, "m/s")
+        self.footer("WIND")
 
         direction_text = "".join([word[0] for word in compass_direction.split(" ")])
 
@@ -550,13 +554,14 @@ class WindSpeedView(SensorView):
             self._data.wind_speed.latest_ms(),
             "m/s"
         )
+        self.footer("WIND")
 
         self.graph(
             self._data.wind_speed.history(),
-            graph_x=0,
+            graph_x=2,
             graph_y=35,
             width=DISPLAY_WIDTH,
-            height=DISPLAY_HEIGHT - 35,
+            height=DISPLAY_HEIGHT - 65,
             vmin=0,
             vmax=20,
             bar_width=self.GRAPH_BAR_WIDTH
@@ -577,13 +582,14 @@ class RainView(SensorView):
             self._data.rain_mm_sec.latest().value,
             "mm/s"
         )
+        self.footer("RAIN")
 
         self.graph(
             self._data.rain_mm_sec.history(),
-            graph_x=0,
+            graph_x=2,
             graph_y=35,
             width=DISPLAY_WIDTH,
-            height=DISPLAY_HEIGHT - 35,
+            height=DISPLAY_HEIGHT - 65,
             vmin=0,
             vmax=1.0,
             bar_width=self.GRAPH_BAR_WIDTH
@@ -604,13 +610,14 @@ class TPHView(SensorView):
             self._data.temperature.latest().value,
             "°C"
         )
+        self.footer("TEMP")
 
         self.graph(
             self._data.temperature.history(),
-            graph_x=0,
+            graph_x=2,
             graph_y=35,
             width=DISPLAY_WIDTH,
-            height=DISPLAY_HEIGHT - 35,
+            height=DISPLAY_HEIGHT - 65,
             vmin=self._settings.minimum_temperature,
             vmax=self._settings.maximum_temperature,
             bar_width=self.GRAPH_BAR_WIDTH
@@ -631,13 +638,14 @@ class LightView(SensorView):
             self._data.lux.latest().value,
             "lux"
         )
+        self.footer("LIGHT")
 
         self.graph(
             self._data.lux.history(int(DISPLAY_WIDTH / self.GRAPH_BAR_WIDTH)),
-            graph_x=0,
+            graph_x=2,
             graph_y=35,
             width=DISPLAY_WIDTH,
-            height=DISPLAY_HEIGHT - 35,
+            height=DISPLAY_HEIGHT - 65,
             vmin=0,
             vmax=1000,
             bar_width=self.GRAPH_BAR_WIDTH
@@ -645,6 +653,62 @@ class LightView(SensorView):
 
 
 class LightSettingsView(SettingsView):
+    pass
+
+
+class PressureView(SensorView):
+    """Pressure."""
+
+    title = "BME280: Pressure"
+
+    def render_view(self):
+        self.heading(
+            self._data.pressure.latest().value,
+            "mbar"
+        )
+        self.footer("PRESSURE")
+
+        self.graph(
+            self._data.pressure.history(int(DISPLAY_WIDTH / self.GRAPH_BAR_WIDTH)),
+            graph_x=2,
+            graph_y=35,
+            width=DISPLAY_WIDTH,
+            height=DISPLAY_HEIGHT - 65,
+            vmin=1000,
+            vmax=1100,
+            bar_width=self.GRAPH_BAR_WIDTH
+        )
+
+
+class PressureSettingsView(SettingsView):
+    pass
+
+
+class HumidityView(SensorView):
+    """Pressure."""
+
+    title = "BME280: Humidity"
+
+    def render_view(self):
+        self.heading(
+            self._data.relative_humidity.latest().value,
+            "%rh"
+        )
+        self.footer("HUMIDITY")
+
+        self.graph(
+            self._data.relative_humidity.history(int(DISPLAY_WIDTH / self.GRAPH_BAR_WIDTH)),
+            graph_x=2,
+            graph_y=35,
+            width=DISPLAY_WIDTH,
+            height=DISPLAY_HEIGHT - 65,
+            vmin=0,
+            vmax=100,
+            bar_width=self.GRAPH_BAR_WIDTH
+        )
+
+
+class HumiditySettingsView(SettingsView):
     pass
 
 
@@ -913,6 +977,14 @@ def main():
                 LightView(image, sensordata, settings),
                 LightSettingsView(image),
             ),
+            (
+                PressureView(image, sensordata, settings),
+                PressureSettingsView(image),
+            ),
+            (
+                HumidityView(image, sensordata, settings),
+                HumiditySettingsView(image),
+            )
         ]
     )
 

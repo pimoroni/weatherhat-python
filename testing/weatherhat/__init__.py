@@ -105,7 +105,7 @@ class WeatherHAT:
         self.device_temperature = 30.0 + math.sin(time.time() / 10.0) * 5.0
         self.temperature = self.device_temperature + self.temperature_offset
 
-        self.pressure = 1000.0 + math.sin(time.time() / 10.0) * 100.0
+        self.pressure = 1050.0 + math.sin(time.time() / 10.0) * 50.0
         self.humidity = 50 + math.sin(time.time() / 10.0) * 25.0
 
         self.relative_humidity = self.compensate_humidity(self.humidity, self.device_temperature, self.temperature)
