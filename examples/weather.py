@@ -212,11 +212,11 @@ class SensorView(View):
         tw, th = self._draw.textsize(data, self.font_large)
 
         self._draw.text(
-            (0, 32),
+            (0, 16),
             data,
             font=self.font_large,
             fill=COLOR_WHITE,
-            anchor="lb"
+            anchor="lm"
         )
 
         self._draw.text(
@@ -290,11 +290,11 @@ class MainView(SensorView):
                 data = "{:0.0f}".format(data)
 
             self._draw.text(
-                (x + w + o_x, y + 10 + 32),  # Text height is fixed at 32 here, since we're only using numbers
+                (x + w + o_x, y + 10 + 16),  # Position is the right, center of the text
                 data,
                 font=self.font_large,
                 fill=color,
-                anchor="rb"  # Using "rb" stops text jumping vertically as often
+                anchor="rm"  # Using "rm" stops text jumping vertically
             )
 
         self._draw.text(
@@ -536,11 +536,11 @@ class WindDirectionView(SensorView):
         direction_text = "".join([word[0] for word in compass_direction.split(" ")])
 
         self._draw.text(
-            (DISPLAY_WIDTH, 0),
+            (DISPLAY_WIDTH, 16),
             direction_text,
             font=self.font_large,
             fill=COLOR_WHITE,
-            anchor="rt"
+            anchor="rm"
         )
 
 
