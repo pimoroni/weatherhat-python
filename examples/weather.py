@@ -224,15 +224,15 @@ class SensorView(View):
         tw, th = self._draw.textsize(data, self.font_large)
 
         self._draw.text(
-            (0, 0),
+            (0, 32),
             data,
             font=self.font_large,
             fill=COLOR_WHITE,
-            anchor="lt"
+            anchor="lb"
         )
 
         self._draw.text(
-            (tw, th - 14),
+            (tw, 32),
             units,
             font=self.font_medium,
             fill=COLOR_WHITE,
@@ -278,28 +278,40 @@ class MainView(SensorView):
 
     title = "Overview"
 
-    def draw_info(self, x, y, color, label, data, desc, right=False):
+    def __init__(self, image, sensordata, settings=None):
+        self._graph_mode = False
+        SensorView.__init__(self, image, sensordata, settings)
+
+    def draw_info(self, x, y, color, label, data, desc, right=False, vmin=0, vmax=20):
         w = 100
         o_x = 0 if right else 20
 
-        if data < 100:
-            data = "{:0.1f}".format(data)
+        if self._graph_mode:
+            vmax = max(vmax, max([h.value for h in data]))  # auto ranging?
+            self.graph(data, x + o_x + 15, y + 10, 90, 32, vmin=vmin, vmax=vmax, bar_width=10, colors=[color])
         else:
-            data = "{:0.0f}".format(data)
+            if type(data) is list:
+                data = data[-1].value
+
+            if data < 100:
+                data = "{:0.1f}".format(data)
+            else:
+                data = "{:0.0f}".format(data)
+
+            self._draw.text(
+                (x + w + o_x, y + 10 + 32),  # Text height is fixed at 32 here, since we're only using numbers
+                data,
+                font=self.font_large,
+                fill=color,
+                anchor="rb"  # Using "rb" stops text jumping vertically as often
+            )
 
         self._draw.text(
-            (x + w + o_x, y + 10),
-            data,
-            font=self.font_large,
-            fill=color,
-            anchor="rt"
-        )
-        self._draw.text(
-            (x + w + o_x, y + 45),
+            (x + w + o_x, y + 45 + 20),
             desc,
             font=self.font,
             fill=COLOR_WHITE,
-            anchor="rt"
+            anchor="rb"
         )
         label_img = Image.new("RGB", (65, 20))
         label_draw = ImageDraw.Draw(label_img)
@@ -310,55 +322,17 @@ class MainView(SensorView):
         else:
             self._image.paste(label_img, (x, y))
 
+    def button_b(self):
+        self._graph_mode = not self._graph_mode
+
     def render_view(self):
-        self.draw_info(0, 0, (20, 20, 220), "RAIN", self._data.rain_mm_sec.latest().value, "mm/s")
-        self.draw_info(0, 75, (20, 20, 220), "PRES", self._data.pressure.latest().value, "mbar")
-        self.draw_info(0, 150, (20, 100, 220), "TEMP", self._data.temperature.latest().value, "°C")
+        self.draw_info(0, 0, (20, 20, 220), "RAIN", self._data.rain_mm_sec.history(), "mm/s", vmax=5)
+        self.draw_info(0, 75, (20, 20, 220), "PRES", self._data.pressure.history(), "mbar")
+        self.draw_info(0, 150, (20, 100, 220), "TEMP", self._data.temperature.history(), "°C")
 
-        self.draw_info(120, 0, (220, 20, 220), "WIND", self._data.wind_speed.latest_ms(), "m/s", True)
-        self.draw_info(120, 75, (220, 100, 20), "LIGHT", self._data.lux.latest().value, "lux", True)
-        self.draw_info(120, 150, (10, 10, 220), "HUM", self._data.relative_humidity.latest().value, "%rh", True)
-
-        """
-        self._draw.text(
-            (0, 40),
-            "Temperature: {:0.2f}C".format(self._data.temperature),
-            font=self.font_small,
-            fill=COLOR_WHITE
-        )
-        self._draw.text(
-            (0, 60),
-            "Pressure: {:0.4f}hPA".format(self._data.pressure),
-            font=self.font_small,
-            fill=COLOR_WHITE
-        )
-        self._draw.text(
-            (0, 80),
-            "Humidity: {:0.2f}%".format(self._data.humidity),
-            font=self.font_small,
-            fill=COLOR_WHITE
-        )
-        self._draw.text(
-            (0, 100),
-            "Wind Direction: {:0.0f} ({})".format(
-                self._data.wind_degrees_avg,
-                self._data.degrees_to_cardinal(self._data.wind_degrees_avg)),
-            font=self.font_small,
-            fill=COLOR_WHITE
-        )
-        self._draw.text(
-            (0, 120),
-            "Wind Speed: {:0.2f}mph".format(self._data.wind_mph),
-            font=self.font_small,
-            fill=COLOR_WHITE
-        )
-        self._draw.text(
-            (0, 140),
-            "Dewpoint: {:0.2f}C".format(self._data.dewpoint),
-            font=self.font_small,
-            fill=COLOR_WHITE
-        )
-        """
+        self.draw_info(120, 0, (220, 20, 220), "WIND", self._data.wind_speed.history_ms(), "m/s", right=True)
+        self.draw_info(120, 75, (220, 100, 20), "LIGHT", self._data.lux.history(), "lux", right=True)
+        self.draw_info(120, 150, (10, 10, 220), "HUM", self._data.relative_humidity.history(), "%rh", right=True)
 
 
 class SettingsView(View):
@@ -960,10 +934,6 @@ def main():
         viewcontroller.update()
         viewcontroller.render()
         display.display(image.convert("RGB"))
-
-        if display.get_key() == "Right":
-            viewcontroller.button_a()
-
         settings.save()
         time.sleep(1.0 / FPS)
 

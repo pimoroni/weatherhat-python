@@ -96,6 +96,9 @@ class WindSpeedHistory(History):
         samples = [entry.value for entry in self.history() if entry.timestamp >= cut_off_time]
         return self.cms_to_ms(max(samples))
 
+    def history_ms(self):
+        return [HistoryEntry(self.cms_to_ms(h.value), timestamp=h.timestamp) for h in self.history()]
+
 
 class WindDirectionHistory(History):
     def degrees_to_cardinal(self, degrees):
