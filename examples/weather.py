@@ -185,10 +185,6 @@ class SensorView(View):
         View.__init__(self, image)
         self._data = sensordata
         self._settings = settings
-        self.init_view()
-
-    def init_view(self):
-        pass
 
     def render(self):
         self.clear()
@@ -269,15 +265,11 @@ class MainView(SensorView):
 
     title = "Overview"
 
-    def __init__(self, image, sensordata, settings=None):
-        self._graph_mode = False
-        SensorView.__init__(self, image, sensordata, settings)
-
-    def draw_info(self, x, y, color, label, data, desc, right=False, vmin=0, vmax=20):
+    def draw_info(self, x, y, color, label, data, desc, right=False, vmin=0, vmax=20, graph_mode=False):
         w = 100
         o_x = 0 if right else 20
 
-        if self._graph_mode:
+        if graph_mode:
             vmax = max(vmax, max([h.value for h in data]))  # auto ranging?
             self.graph(data, x + o_x + 15, y + 10, 90, 32, vmin=vmin, vmax=vmax, bar_width=10, colors=[color])
         else:
@@ -313,151 +305,31 @@ class MainView(SensorView):
         else:
             self._image.paste(label_img, (x, y))
 
-    def button_b(self):
-        self._graph_mode = not self._graph_mode
+    def render_view(self):
+        self.render_graphs()
+
+    def render_graphs(self, graph_mode=False):
+        self.draw_info(0, 0, (20, 20, 220), "RAIN", self._data.rain_mm_sec.history(), "mm/s", vmax=self._settings.maximum_rain_mm, graph_mode=graph_mode)
+        self.draw_info(0, 75, (20, 20, 220), "PRES", self._data.pressure.history(), "mbar", graph_mode=graph_mode)
+        self.draw_info(0, 150, (20, 100, 220), "TEMP", self._data.temperature.history(), "°C", graph_mode=graph_mode)
+
+        self.draw_info(120, 0, (220, 20, 220), "WIND", self._data.wind_speed.history_ms(), "m/s", right=True, graph_mode=graph_mode)
+        self.draw_info(120, 75, (220, 100, 20), "LIGHT", self._data.lux.history(), "lux", right=True, graph_mode=graph_mode)
+        self.draw_info(120, 150, (10, 10, 220), "HUM", self._data.relative_humidity.history(), "%rh", right=True, graph_mode=graph_mode)
+
+
+class MainViewGraph(MainView):
+    title = "Overview: Graphs"
 
     def render_view(self):
-        self.draw_info(0, 0, (20, 20, 220), "RAIN", self._data.rain_mm_sec.history(), "mm/s", vmax=5)
-        self.draw_info(0, 75, (20, 20, 220), "PRES", self._data.pressure.history(), "mbar")
-        self.draw_info(0, 150, (20, 100, 220), "TEMP", self._data.temperature.history(), "°C")
-
-        self.draw_info(120, 0, (220, 20, 220), "WIND", self._data.wind_speed.history_ms(), "m/s", right=True)
-        self.draw_info(120, 75, (220, 100, 20), "LIGHT", self._data.lux.history(), "lux", right=True)
-        self.draw_info(120, 150, (10, 10, 220), "HUM", self._data.relative_humidity.history(), "%rh", right=True)
-
-
-class SettingsView(View):
-    """Baseclass for a settings edit view."""
-
-    def __init__(self, image, options=[]):
-        self._options = options
-        self._current_option = 0
-        self._change_mode = False
-        self._help_mode = False
-        self.channel = None
-
-        View.__init__(self, image)
-
-    def render(self):
-        self.clear()
-        self.icon(icon_backdrop.rotate(180), (DISPLAY_WIDTH - 26, 0), COLOR_WHITE)
-        self.icon(icon_return, (DISPLAY_WIDTH - 19 - 3, 3), (55, 55, 55))
-
-        if len(self._options) == 0:
-            return
-
-        option = self._options[self._current_option]
-        title = option["title"]
-        prop = option["prop"]
-        object = option.get("object", self.channel)
-        value = getattr(object, prop)
-        fmt = option.get("format", "{value}")
-        if type(fmt) is str:
-            text = fmt.format(value=value)
-        else:
-            text = option["format"](value)
-        mode = option.get("mode", "int")
-        help = option["help"]
-
-        if self._change_mode:
-            self.label(
-                "Y",
-                "Yes" if mode == "bool" else "++",
-                textcolor=COLOR_BLACK,
-                bgcolor=COLOR_WHITE,
-            )
-            self.label(
-                "B",
-                "No" if mode == "bool" else "--",
-                textcolor=COLOR_BLACK,
-                bgcolor=COLOR_WHITE,
-            )
-        else:
-            self.label("B", "Next", textcolor=COLOR_BLACK, bgcolor=COLOR_WHITE)
-            self.label("Y", "Change", textcolor=COLOR_BLACK, bgcolor=COLOR_WHITE)
-
-        self._draw.text((3, 36), f"{title} : {text}", font=self.font, fill=COLOR_WHITE)
-
-        if self._help_mode:
-            self.icon(icon_backdrop.rotate(90), (0, 0), COLOR_BLUE)
-            self._draw.rectangle((7, 3, 23, 19), COLOR_BLACK)
-            self.overlay(help, top=26)
-
-        self.icon(icon_help, (0, 0), COLOR_BLUE)
-
-    def button_a(self):
-        self._help_mode = not self._help_mode
-        return True
-
-    def button_b(self):
-        if self._help_mode:
-            return True
-
-        if self._change_mode:
-            option = self._options[self._current_option]
-            prop = option["prop"]
-            mode = option.get("mode", "int")
-            object = option.get("object", self.channel)
-
-            value = getattr(object, prop)
-            if mode == "bool":
-                value = False
-            else:
-                inc = option["inc"]
-                limit = option["min"]
-                value -= inc
-                if mode == "float":
-                    value = round(value, option.get("round", 1))
-                if value < limit:
-                    value = limit
-            setattr(object, prop, value)
-        else:
-            self._current_option += 1
-            self._current_option %= len(self._options)
-
-        return True
-
-    def button_x(self):
-        if self._change_mode:
-            self._change_mode = False
-            return True
-        return False
-
-    def button_y(self):
-        if self._help_mode:
-            return True
-        if self._change_mode:
-            option = self._options[self._current_option]
-            prop = option["prop"]
-            mode = option.get("mode", "int")
-            object = option.get("object", self.channel)
-
-            value = getattr(object, prop)
-            if mode == "bool":
-                value = True
-            else:
-                inc = option["inc"]
-                limit = option["max"]
-                value += inc
-                if mode == "float":
-                    value = round(value, option.get("round", 1))
-                if value > limit:
-                    value = limit
-            setattr(object, prop, value)
-        else:
-            self._change_mode = True
-
-        return True
-
-
-class MainSettingsView(SettingsView):
-    pass
+        self.render_graphs(graph_mode=True)
 
 
 class WindDirectionView(SensorView):
     """Wind Direction."""
 
-    title = "Wind Direction"
+    title = "Wind"
+    metric = "m/sec"
 
     def __init__(self, image, sensordata, settings=None):
         SensorView.__init__(self, image, sensordata, settings)
@@ -530,8 +402,8 @@ class WindDirectionView(SensorView):
             y -= th / 2
             self._draw.text((x, y), name, font=self.font_small, fill=COLOR_GREY)
 
-        self.heading(speed_ms, "m/s")
-        self.footer("WIND")
+        self.heading(speed_ms, self.metric)
+        self.footer(self.title.upper())
 
         direction_text = "".join([word[0] for word in compass_direction.split(" ")])
 
@@ -547,14 +419,15 @@ class WindDirectionView(SensorView):
 class WindSpeedView(SensorView):
     """Wind Speed."""
 
-    title = "Wind Speed"
+    title = "WIND"
+    metric = "m/s"
 
     def render_view(self):
         self.heading(
             self._data.wind_speed.latest_ms(),
-            "m/s"
+            self.metric
         )
-        self.footer("WIND")
+        self.footer(self.title.upper())
 
         self.graph(
             self._data.wind_speed.history(),
@@ -562,27 +435,24 @@ class WindSpeedView(SensorView):
             graph_y=35,
             width=DISPLAY_WIDTH,
             height=DISPLAY_HEIGHT - 65,
-            vmin=0,
-            vmax=20,
+            vmin=self._settings.minimum_wind_ms,
+            vmax=self._settings.maximum_wind_ms,
             bar_width=self.GRAPH_BAR_WIDTH
         )
-
-
-class WindSettingsView(SettingsView):
-    pass
 
 
 class RainView(SensorView):
     """Rain Overview."""
 
     title = "Rain"
+    metric = "mm/s"
 
     def render_view(self):
         self.heading(
             self._data.rain_mm_sec.latest().value,
-            "mm/s"
+            self.metric
         )
-        self.footer("RAIN")
+        self.footer(self.title.upper())
 
         self.graph(
             self._data.rain_mm_sec.history(),
@@ -590,27 +460,24 @@ class RainView(SensorView):
             graph_y=35,
             width=DISPLAY_WIDTH,
             height=DISPLAY_HEIGHT - 65,
-            vmin=0,
-            vmax=1.0,
+            vmin=self._settings.minimum_rain_mm,
+            vmax=self._settings.maximum_rain_mm,
             bar_width=self.GRAPH_BAR_WIDTH
         )
 
 
-class RainSettingsView(SettingsView):
-    pass
+class TemperatureView(SensorView):
+    """Temperature."""
 
-
-class TPHView(SensorView):
-    """Temperature, Pressure & Humidity."""
-
-    title = "BME280: Environment"
+    title = "TEMP"
+    metric = "°C"
 
     def render_view(self):
         self.heading(
             self._data.temperature.latest().value,
-            "°C"
+            self.metric
         )
-        self.footer("TEMP")
+        self.footer(self.title.upper())
 
         self.graph(
             self._data.temperature.history(),
@@ -624,21 +491,18 @@ class TPHView(SensorView):
         )
 
 
-class TPHSettingsView(SettingsView):
-    pass
-
-
 class LightView(SensorView):
     """Light."""
 
-    title = "LTR559: Light"
+    title = "Light"
+    metric = "lux"
 
     def render_view(self):
         self.heading(
             self._data.lux.latest().value,
-            "lux"
+            self.metric
         )
-        self.footer("LIGHT")
+        self.footer(self.title.upper())
 
         self.graph(
             self._data.lux.history(int(DISPLAY_WIDTH / self.GRAPH_BAR_WIDTH)),
@@ -646,27 +510,24 @@ class LightView(SensorView):
             graph_y=35,
             width=DISPLAY_WIDTH,
             height=DISPLAY_HEIGHT - 65,
-            vmin=0,
-            vmax=1000,
+            vmin=self._settings.minimum_lux,
+            vmax=self._settings.maximum_lux,
             bar_width=self.GRAPH_BAR_WIDTH
         )
-
-
-class LightSettingsView(SettingsView):
-    pass
 
 
 class PressureView(SensorView):
     """Pressure."""
 
-    title = "BME280: Pressure"
+    title = "PRESSURE"
+    metric = "mbar"
 
     def render_view(self):
         self.heading(
             self._data.pressure.latest().value,
-            "mbar"
+            self.metric
         )
-        self.footer("PRESSURE")
+        self.footer(self.title.upper())
 
         self.graph(
             self._data.pressure.history(int(DISPLAY_WIDTH / self.GRAPH_BAR_WIDTH)),
@@ -674,27 +535,24 @@ class PressureView(SensorView):
             graph_y=35,
             width=DISPLAY_WIDTH,
             height=DISPLAY_HEIGHT - 65,
-            vmin=1000,
-            vmax=1100,
+            vmin=self._settings.minimum_pressure,
+            vmax=self._settings.maximum_pressure,
             bar_width=self.GRAPH_BAR_WIDTH
         )
-
-
-class PressureSettingsView(SettingsView):
-    pass
 
 
 class HumidityView(SensorView):
     """Pressure."""
 
-    title = "BME280: Humidity"
+    title = "Humidity"
+    metric = "%rh"
 
     def render_view(self):
         self.heading(
             self._data.relative_humidity.latest().value,
-            "%rh"
+            self.metric
         )
-        self.footer("HUMIDITY")
+        self.footer(self.title.upper())
 
         self.graph(
             self._data.relative_humidity.history(int(DISPLAY_WIDTH / self.GRAPH_BAR_WIDTH)),
@@ -708,15 +566,34 @@ class HumidityView(SensorView):
         )
 
 
-class HumiditySettingsView(SettingsView):
-    pass
-
-
 class ViewController:
     def __init__(self, views):
         self.views = views
         self._current_view = 0
         self._current_subview = 0
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+        for pin in BUTTONS:
+            GPIO.add_event_detect(pin, GPIO.FALLING, self.handle_button, bouncetime=200)
+
+    def handle_button(self, pin):
+        index = BUTTONS.index(pin)
+        label = LABELS[index]
+
+        if label == "A":  # Select View
+            self.button_a()
+
+        if label == "B":
+            self.button_b()
+
+        if label == "X":
+            self.button_x()
+
+        if label == "Y":
+            self.button_y()
 
     @property
     def home(self):
@@ -729,16 +606,14 @@ class ViewController:
             self._current_subview %= len(view)
 
     def next_view(self):
-        if self._current_subview == 0:
-            self._current_view += 1
-            self._current_view %= len(self.views)
-            self._current_subview = 0
+        self._current_subview = 0
+        self._current_view += 1
+        self._current_view %= len(self.views)
 
     def prev_view(self):
-        if self._current_subview == 0:
-            self._current_view -= 1
-            self._current_view %= len(self.views)
-            self._current_subview = 0
+        self._current_subview = 0
+        self._current_view -= 1
+        self._current_view %= len(self.views)
 
     def get_current_view(self):
         view = self.views[self._current_view]
@@ -785,8 +660,20 @@ class Config:
         self.wind_trails = True
 
         # BME280 Settings
-        self.minimum_temperature = 4
+        self.minimum_temperature = -10
         self.maximum_temperature = 40
+
+        self.minimum_pressure = 1000
+        self.maximum_pressure = 1100
+
+        self.minimum_lux = 100
+        self.maximum_lux = 1000
+
+        self.minimum_rain_mm = 0
+        self.maximum_rain_mm = 10
+
+        self.minimum_wind_ms = 0
+        self.maximum_wind_ms = 40
 
         self.load()
 
@@ -800,17 +687,6 @@ class Config:
             raise yaml.parser.ParserError(
                 "Error parsing settings file: {} ({})".format(self._file, e)
             )
-
-    def save(self):
-        dump = yaml.dump(self._config)
-
-        if dump == self._last_save:
-            return False
-
-        with open(self._file, "w") as file:
-            file.write(dump)
-
-        self._last_save = dump
 
     @property
     def _config(self):
@@ -879,22 +755,6 @@ class SensorData:
 
 
 def main():
-    def handle_button(pin):
-        index = BUTTONS.index(pin)
-        label = LABELS[index]
-
-        if label == "A":  # Select View
-            viewcontroller.button_a()
-
-        if label == "B":
-            viewcontroller.button_b()
-
-        if label == "X":
-            viewcontroller.button_x()
-
-        if label == "Y":
-            viewcontroller.button_y()
-
     display = ST7789.ST7789(
         rotation=90,
         port=0,
@@ -903,89 +763,17 @@ def main():
         backlight=13,
         spi_speed_hz=SPI_SPEED_MHZ * 1000 * 1000
     )
-
     image = Image.new("RGBA", (DISPLAY_WIDTH, DISPLAY_HEIGHT), color=(255, 255, 255))
-
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setwarnings(False)
-    GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-    for pin in BUTTONS:
-        GPIO.add_event_detect(pin, GPIO.FALLING, handle_button, bouncetime=200)
-
     sensordata = SensorData()
-
     settings = Config()
-
-    main_options = []
-    wind_direction_options = [
-        {
-            "title": "Wind Trails",
-            "prop": "wind_trails",
-            "mode": "bool",
-            "format": lambda value: "Yes" if value else "No",
-            "object": settings,
-            "help": "Enable/disable wind directon trails."
-        }
-    ]
-    temperature_options = [
-        {
-            "title": "Minimum Temperature",
-            "prop": "minimum_temperature",
-            "inc": 1,
-            "min": -40,
-            "max": 100,
-            "format": "{value}C",
-            "object": settings,
-            "help": "Minimum temperature in the graph, in degrees C."
-        },
-        {
-            "title": "Maximum Temperature",
-            "prop": "maximum_temperature",
-            "inc": 1,
-            "min": -40,
-            "max": 100,
-            "format": "{value}C",
-            "object": settings,
-            "help": "Maximum temperature in the graph, in degrees C."
-        }
-    ]
-
     viewcontroller = ViewController(
-        [
-            (
-                MainView(image, sensordata, settings),
-                MainSettingsView(image, options=main_options)
-            ),
-            (
-                WindDirectionView(image, sensordata, settings),
-                WindSettingsView(image, options=wind_direction_options)
-            ),
-            (
-                WindSpeedView(image, sensordata, settings),
-                WindSettingsView(image)
-            ),
-            (
-                RainView(image, sensordata, settings),
-                RainSettingsView(image),
-            ),
-            (
-                TPHView(image, sensordata, settings),
-                TPHSettingsView(image, options=temperature_options),
-            ),
-            (
-                LightView(image, sensordata, settings),
-                LightSettingsView(image),
-            ),
-            (
-                PressureView(image, sensordata, settings),
-                PressureSettingsView(image),
-            ),
-            (
-                HumidityView(image, sensordata, settings),
-                HumiditySettingsView(image),
-            )
-        ]
+        (
+            (MainView(image, sensordata, settings), MainViewGraph(image, sensordata, settings)),
+            (WindDirectionView(image, sensordata, settings), WindSpeedView(image, sensordata, settings)),
+            RainView(image, sensordata, settings),
+            LightView(image, sensordata, settings),
+            (TemperatureView(image, sensordata, settings), PressureView(image, sensordata, settings), HumidityView(image, sensordata, settings)),
+        )
     )
 
     while True:
@@ -993,7 +781,6 @@ def main():
         viewcontroller.update()
         viewcontroller.render()
         display.display(image.convert("RGB"))
-        settings.save()
         time.sleep(1.0 / FPS)
 
 
