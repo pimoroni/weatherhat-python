@@ -233,14 +233,34 @@ class SensorView(View):
             #         Blue          Teal           Green        Yellow         Red
             colors = [(0, 0, 255), (0, 255, 255), (0, 255, 0), (255, 255, 0), (255, 0, 0)]
 
+        vrange = vmax - vmin
+        vstep = float(height) / vrange
+
+        if vmin >= 0:
+            midpoint_y = height
+        else:
+            midpoint_y = vmax * vstep
+            self._draw.line((graph_x, graph_y + midpoint_y, graph_x + width, graph_y + midpoint_y), fill=COLOR_GREY)
+
         max_values = int(width / bar_width)
 
         values = [entry.value for entry in values[-max_values:]]
 
         for i, v in enumerate(values):
             v = min(vmax, max(vmin, v))
-            scale = float(v - vmin) / float(vmax - vmin)
-            color = scale * (len(colors) - 1)
+
+            offset_y = graph_y
+
+            if vmin < 0:
+                bar_height = midpoint_y * float(v) / float(vmax)
+            else:
+                bar_height = midpoint_y * float(v - vmin) / float(vmax - vmin)
+
+            if v < 0:
+                offset_y += midpoint_y
+                bar_height = (height - midpoint_y) * float(abs(v)) / abs(vmin)
+
+            color = float(v - vmin) / float(vmax - vmin) * (len(colors) - 1)
             color_idx = int(color)      # The integer part of color becomes our index into the colors array
             blend = color - color_idx   # The fractional part forms the blend amount between the two colours
             bar_color = colors[color_idx]
@@ -249,11 +269,17 @@ class SensorView(View):
                 bar_color = bar_color
 
             x = (i * bar_width)
-            h = scale * height
-            self._draw.rectangle((
-                graph_x + x, graph_y + height - h,
-                graph_x + x + int(bar_width / 2), graph_y + height
-            ), fill=bar_color)
+
+            if v < 0:
+                self._draw.rectangle((
+                    graph_x + x, offset_y,
+                    graph_x + x + int(bar_width / 2), offset_y + bar_height
+                ), fill=bar_color)
+            else:
+                self._draw.rectangle((
+                    graph_x + x, offset_y + midpoint_y - bar_height,
+                    graph_x + x + int(bar_width / 2), offset_y + midpoint_y
+                ), fill=bar_color)
 
 
 class MainView(SensorView):
@@ -311,7 +337,7 @@ class MainView(SensorView):
     def render_graphs(self, graph_mode=False):
         self.draw_info(0, 0, (20, 20, 220), "RAIN", self._data.rain_mm_sec.history(), "mm/s", vmax=self._settings.maximum_rain_mm, graph_mode=graph_mode)
         self.draw_info(0, 75, (20, 20, 220), "PRES", self._data.pressure.history(), "mbar", graph_mode=graph_mode)
-        self.draw_info(0, 150, (20, 100, 220), "TEMP", self._data.temperature.history(), "°C", graph_mode=graph_mode)
+        self.draw_info(0, 150, (20, 100, 220), "TEMP", self._data.temperature.history(), "°C", graph_mode=graph_mode, vmin=self._settings.minimum_temperature, vmax=self._settings.maximum_temperature)
 
         self.draw_info(120, 0, (220, 20, 220), "WIND", self._data.wind_speed.history_ms(), "m/s", right=True, graph_mode=graph_mode)
         self.draw_info(120, 75, (220, 100, 20), "LIGHT", self._data.lux.history(), "lux", right=True, graph_mode=graph_mode)

@@ -102,7 +102,7 @@ class WeatherHAT:
         # TODO make history depth configurable
         # TODO make update interval for sensors fixed so history always represents a known period
 
-        self.device_temperature = 30.0 + math.sin(time.time() / 10.0) * 5.0
+        self.device_temperature = 10.0 + math.sin(time.time() / 10.0) * 20.0
         self.temperature = self.device_temperature + self.temperature_offset
 
         self.pressure = 1050.0 + math.sin(time.time() / 10.0) * 50.0
