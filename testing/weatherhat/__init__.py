@@ -59,11 +59,13 @@ class WeatherHAT:
         self.wind_speed = 0
         self.wind_direction = 0
 
-        self.rain_mm_total = 0
-        self.rain_mm_sec = 0
+        self.rain = 0
+        self.rain_total = 0
 
         self._rain_counts = 0
         self._wind_counts = 0
+
+        self.updated_wind_rain = False
 
         self.reset_counts()
 
@@ -95,6 +97,7 @@ class WeatherHAT:
     def update(self, interval=60.0):
         # Time elapsed since last update
         delta = time.time() - self._t_start
+        self.updated_wind_rain = False
 
         # Always update TPHL & Wind Direction
         self._lock.acquire(blocking=True)
@@ -124,11 +127,14 @@ class WeatherHAT:
         if delta < interval:
             return
 
+        self.updated_wind_rain = True
+
         wind_counts = 2 + math.sin(time.time()) * 1
         rain_counts = 5 + math.sin(time.time()) * 5
 
         rain_hz = rain_counts / delta
         wind_hz = wind_counts / delta
+        self.rain_total = rain_counts * RAIN_MM_PER_TICK
         self.reset_counts()
 
         # print(delta, rain_hz, wind_hz)
@@ -137,7 +143,6 @@ class WeatherHAT:
 
         wind_hz /= 2.0  # Two pulses per rotation
         wind_cms = wind_hz * ANE_CIRCUMFERENCE * ANE_FACTOR
-        self.wind_speed = wind_cms
+        self.wind_speed = wind_cms / 100.0
 
-        self.rain_mm_total = self._rain_counts * RAIN_MM_PER_TICK
-        self.rain_mm_sec = rain_hz * RAIN_MM_PER_TICK
+        self.rain = rain_hz * RAIN_MM_PER_TICK

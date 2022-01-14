@@ -194,7 +194,10 @@ class MainView(SensorView):
             self.graph(data, x + o_x + 30, y + 20, 180, 64, vmin=vmin, vmax=vmax, bar_width=20, colors=[color])
         else:
             if type(data) is list:
-                data = data[-1].value
+                if len(data) > 0:
+                    data = data[-1].value
+                else:
+                    data = 0
 
             if data < 100:
                 data = "{:0.1f}".format(data)
@@ -235,7 +238,7 @@ class MainView(SensorView):
         self.draw_info(0, 300, (20, 100, 220), "TEMP", self._data.temperature.history(), "°C", graph_mode=graph_mode, vmin=self._settings.minimum_temperature, vmax=self._settings.maximum_temperature)
 
         x = int(self.canvas_width / 2)
-        self.draw_info(x, 0, (220, 20, 220), "WIND", self._data.wind_speed.history_ms(), "m/s", right=True, graph_mode=graph_mode)
+        self.draw_info(x, 0, (220, 20, 220), "WIND", self._data.wind_speed.history(), "m/s", right=True, graph_mode=graph_mode)
         self.draw_info(x, 150, (220, 100, 20), "LIGHT", self._data.lux.history(), "lux", right=True, graph_mode=graph_mode)
         self.draw_info(x, 300, (10, 10, 220), "HUM", self._data.relative_humidity.history(), "%rh", right=True, graph_mode=graph_mode)
 
@@ -262,8 +265,8 @@ class WindDirectionView(SensorView):
         ox = self.canvas_width / 2
         oy = 40 + ((self.canvas_height - 60) / 2)
         needle = self._data.needle
-        speed_ms = self._data.wind_speed.average_ms(60)
-        # gust_ms = self._data.wind_speed.gust_ms()
+        speed_ms = self._data.wind_speed.average(60)
+        # gust_ms = self._data.wind_speed.gust()
         compass_direction = self._data.wind_direction.average_compass()
 
         radius = 80
@@ -349,7 +352,7 @@ class WindSpeedView(SensorView):
     def render(self):
         SensorView.render(self)
         self.heading(
-            self._data.wind_speed.latest_ms(),
+            self._data.wind_speed.latest(),
             self.metric
         )
         self.footer(self.title.upper())
@@ -654,8 +657,8 @@ class SensorData:
         self.wind_speed = history.WindSpeedHistory()
         self.wind_direction = history.WindDirectionHistory()
 
-        self.rain_mm_total = history.History()
         self.rain_mm_sec = history.History()
+        self.rain_total = 0
 
         # Track previous average values to give the compass a trail
         self.needle_trail = []
@@ -673,11 +676,15 @@ class SensorData:
 
         self.lux.append(self.sensor.lux)
 
+        if self.sensor.updated_wind_rain:
+            self.rain_total = self.sensor.rain_total
+        else:
+            self.rain_total = 0
+
         self.wind_speed.append(self.sensor.wind_speed)
         self.wind_direction.append(self.sensor.wind_direction)
 
-        self.rain_mm_total.append(self.sensor.rain_mm_total)
-        self.rain_mm_sec.append(self.sensor.rain_mm_sec)
+        self.rain_mm_sec.append(self.sensor.rain)
 
         self.needle = math.radians(self.wind_direction.average(self.WIND_DIRECTION_AVERAGE_SAMPLES))
         self.needle_trail.append(self.needle)

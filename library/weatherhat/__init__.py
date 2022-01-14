@@ -46,6 +46,7 @@ wind_direction_to_degrees = {
 
 class WeatherHAT:
     def __init__(self):
+        self.updated_wind_rain = False
         self._lock = threading.Lock()
         self._i2c_dev = SMBus(1)
 
@@ -96,8 +97,8 @@ class WeatherHAT:
         self.wind_speed = 0
         self.wind_direction = 0
 
-        self.rain_mm_total = 0
-        self.rain_mm_sec = 0
+        self.rain = 0
+        self.rain_total = 0
 
         self.reset_counts()
 
@@ -139,11 +140,10 @@ class WeatherHAT:
         # Time elapsed since last update
         delta = time.time() - self._t_start
 
+        self.updated_wind_rain = False
+
         # Always update TPHL & Wind Direction
         self._lock.acquire(blocking=True)
-
-        # TODO make history depth configurable
-        # TODO make update interval for sensors fixed so history always represents a known period
 
         self.device_temperature = self._bme280.get_temperature()
         self.temperature = self.device_temperature + self.temperature_offset
@@ -167,20 +167,20 @@ class WeatherHAT:
         if delta < interval:
             return
 
+        self.updated_wind_rain = True
+
         rain_hz = self._rain_counts / delta
         wind_hz = self._wind_counts / delta
+        self.rain_total = self._rain_counts * RAIN_MM_PER_TICK
         self.reset_counts()
-
-        # print(delta, rain_hz, wind_hz)
 
         # wind speed of 2.4km/h causes the switch to close once per second
 
         wind_hz /= 2.0  # Two pulses per rotation
         wind_cms = wind_hz * ANE_CIRCUMFERENCE * ANE_FACTOR
-        self.wind_speed = wind_cms
+        self.wind_speed = wind_cms / 100.0
 
-        self.rain_mm_total = self._rain_counts * RAIN_MM_PER_TICK
-        self.rain_mm_sec = rain_hz * RAIN_MM_PER_TICK
+        self.rain = rain_hz * RAIN_MM_PER_TICK
 
     def handle_ioe_interrupt(self, pin):
         self._lock.acquire(blocking=True)

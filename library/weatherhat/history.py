@@ -32,6 +32,8 @@ class History:
     def average(self, sample_over=None):
         history = self.history(sample_over)
         num_samples = len(history)
+        if num_samples == 0:
+            return 0
         return sum([entry.value for entry in history]) / float(num_samples)
 
     def timespan(self):
@@ -48,6 +50,10 @@ class History:
         median = int(len(history) / 2)
         return history[median].value
 
+    def total(self, sample_over=None):
+        history = self.history(sample_over)
+        return sum([entry.value for entry in history])
+
     def latest(self):
         return self._history[-1]
 
@@ -59,17 +65,23 @@ class History:
 
 
 class WindSpeedHistory(History):
-    def cms_to_kmph(self, cms):
-        return (cms * 60 * 60) / 1000.0 / 100.0
+    def ms_to_kmph(self, ms):
+        """Convert meters/second to kilometers/hour."""
+        return (ms * 60 * 60) / 1000.0
 
     def latest_kmph(self):
-        return self.cms_to_kmph(self.latest().value)
+        return self.ms_to_kmph(self.latest().value)
 
     def average_kmph(self, sample_over=None):
-        return self.cms_to_kmph(self.average(sample_over))
+        return self.ms_to_kmph(self.average(sample_over))
 
-    def cms_to_mph(self, cms):
-        return ((cms * 60 * 60) / 1000.0 / 100.0) * 0.621371
+    def gust_kmph(self, seconds=3.0):
+        """Wind gust in kilometers/hour."""
+        return self.ms_to_kmph(self.gust(seconds))
+
+    def ms_to_mph(self, ms):
+        """Convert meters/second to miles/hour."""
+        return ((ms * 60 * 60) / 1000.0) * 0.621371
 
     def latest_mph(self):
         return self.cms_to_mph(self.latest().value)
@@ -78,26 +90,14 @@ class WindSpeedHistory(History):
         return self.cms_to_mph(self.average(sample_over))
 
     def gust_mph(self, seconds=3.0):
+        """Wind gust in miles/hour."""
+        return self.ms_to_mph(self.gust(seconds))
+
+    def gust(self, seconds=3.0):
+        """Wind gust in meters/second."""
         cut_off_time = time.time() - seconds
         samples = [entry.value for entry in self.history() if entry.timestamp >= cut_off_time]
-        return self.cms_to_mph(max(samples))
-
-    def cms_to_ms(self, cms):
-        return (cms * 60 * 60) / 1000.0
-
-    def latest_ms(self):
-        return self.cms_to_ms(self.latest().value)
-
-    def average_ms(self, sample_over=None):
-        return self.cms_to_ms(self.average(sample_over))
-
-    def gust_ms(self, seconds=3.0):
-        cut_off_time = time.time() - seconds
-        samples = [entry.value for entry in self.history() if entry.timestamp >= cut_off_time]
-        return self.cms_to_ms(max(samples))
-
-    def history_ms(self):
-        return [HistoryEntry(self.cms_to_ms(h.value), timestamp=h.timestamp) for h in self.history()]
+        return max(samples)
 
 
 class WindDirectionHistory(History):

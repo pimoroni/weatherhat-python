@@ -33,9 +33,11 @@ while True:
     dewpoint.append(sensor.dewpoint)
     lux.append(sensor.lux)
     wind_speed.append(sensor.wind_speed)
-    wind_direction.append(sensor.wind_direction)
-    rain_mm_total.append(sensor.rain_mm_total)
-    rain_mm_sec.append(sensor.rain_mm_sec)
+
+    if sensor.updated_wind_rain:
+        wind_direction.append(sensor.wind_direction)
+        rain_mm_total.append(sensor.rain_total)
+        rain_mm_sec.append(sensor.rain)
 
     wind_direction_cardinal = wind_direction.average_compass(60)
 
@@ -52,9 +54,9 @@ Pressure:    Avg: {pressure.average():0.2f} hPa - Now: {sensor.pressure:0.2f} hP
 
 Wind (avg):  Avg: {wind_speed.average():0.2f} mph - Now: {sensor.wind_speed:0.2f} mph
 
-Rain:        Avg: {rain_mm_sec.average():0.2f} mm/sec - Now: {sensor.rain_mm_sec:0.2f} mm/sec
+Rain:        Avg: {rain_mm_sec.average():0.2f} mm/sec - Now: {sensor.rain:0.2f} mm/sec - Total: {rain_mm_total.total():0.2f} mm
 
-Wind (avg):  Avg: Now: {wind_direction.average(60):0.2f} degrees ({wind_direction_cardinal})
+Wind (avg):  Avg: {wind_direction.average(60):0.2f} degrees ({wind_direction_cardinal}) - Now: {sensor.wind_direction} degrees
 
 """)
 

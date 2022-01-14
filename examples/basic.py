@@ -20,9 +20,9 @@ Light:       {sensor.lux:0.2f} Lux
 
 Pressure:    {sensor.pressure:0.2f} hPa
 
-Wind (avg):  {sensor.wind_speed:0.2f} mph
+Wind (avg):  {sensor.wind_speed:0.2f} m/sec
 
-Rain:        {sensor.rain_mm_sec:0.2f} mm/sec
+Rain:        {sensor.rain:0.2f} mm/sec
 
 Wind (avg):  {sensor.wind_direction:0.2f} degrees ({wind_direction_cardinal})
 
