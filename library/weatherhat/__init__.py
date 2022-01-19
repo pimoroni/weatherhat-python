@@ -53,7 +53,7 @@ class WeatherHAT:
         self._bme280 = BME280(i2c_dev=self._i2c_dev)
         self._ltr559 = LTR559(i2c_dev=self._i2c_dev)
 
-        self._ioe = io.IOE(i2c_addr=0x18, interrupt_pin=4)
+        self._ioe = io.IOE(i2c_addr=0x12, interrupt_pin=4)
 
         # Fudge to enable pull-up on interrupt pin
         self._ioe._gpio.setup(self._ioe._interrupt_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
