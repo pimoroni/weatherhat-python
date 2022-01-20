@@ -10,11 +10,11 @@ while True:
     wind_direction_cardinal = sensor.degrees_to_cardinal(sensor.wind_direction)
 
     print(f"""
-System temp: {sensor.device_temperature:0.2f} ℃
-Temperature: {sensor.temperature:0.2f} ℃
+Raw temp:    {sensor.device_temperature:0.2f} *C
+Comp temp:   {sensor.temperature:0.2f} *C
 
 Humidity:    {sensor.humidity:0.2f} %
-Dew point:   {sensor.dewpoint:0.2f} ℃
+Dew point:   {sensor.dewpoint:0.2f} *C
 
 Light:       {sensor.lux:0.2f} Lux
 
