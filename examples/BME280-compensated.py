@@ -2,7 +2,7 @@ import time
 import weatherhat
 
 print(f"""
-BME280Compensated.py - Print compensated readings from the BME280 weather sensor.
+BME280-compensated.py - Print compensated readings from the BME280 weather sensor.
 Press Ctrl+C to exit!
 """)
 
