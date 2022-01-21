@@ -3,14 +3,9 @@
 import ST7789
 from PIL import Image, ImageDraw, ImageFont
 from fonts.ttf import ManropeBold as UserFont
-import logging
 
-logging.basicConfig(
-    format='%(asctime)s.%(msecs)03d %(levelname)-8s %(message)s',
-    level=logging.INFO,
-    datefmt='%Y-%m-%d %H:%M:%S')
-
-logging.info("""lcd.py - Hello, World! example on the 1.54" LCD.
+print(f"""
+lcd.py - Hello, World! example on the 1.54" LCD.
 Press Ctrl+C to exit!
 """)
 

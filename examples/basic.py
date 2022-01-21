@@ -4,14 +4,20 @@ import weatherhat
 
 sensor = weatherhat.WeatherHAT()
 
+print(f"""
+basic.py - Basic example showing how to read Weather HAT's sensors.
+Press Ctrl+C to exit!
+""")
+
+
 while True:
     sensor.update(interval=60.0)
 
     wind_direction_cardinal = sensor.degrees_to_cardinal(sensor.wind_direction)
 
     print(f"""
-Raw temp:    {sensor.device_temperature:0.2f} *C
-Comp temp:   {sensor.temperature:0.2f} *C
+System temp: {sensor.device_temperature:0.2f} *C
+Temperature: {sensor.temperature:0.2f} *C
 
 Humidity:    {sensor.humidity:0.2f} %
 Dew point:   {sensor.dewpoint:0.2f} *C

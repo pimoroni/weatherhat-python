@@ -3,6 +3,11 @@ import time
 import weatherhat
 from weatherhat import history
 
+print(f"""
+averaging.py - Basic example showing how to use Weather HAT's history/averaging functions.
+Press Ctrl+C to exit!
+""")
+
 sensor = weatherhat.WeatherHAT()
 
 temperature = history.History()
@@ -42,8 +47,8 @@ while True:
     wind_direction_cardinal = wind_direction.average_compass(60)
 
     print(f"""
-Raw temp:    Now: {sensor.device_temperature:0.2f} *C
-Comp temp:   Avg: {temperature.average():0.2f} *C - Now: {sensor.temperature:0.2f} *C
+System temp: Now: {sensor.device_temperature:0.2f} *C
+Temperature: Avg: {temperature.average():0.2f} *C - Now: {sensor.temperature:0.2f} *C
 
 Humidity:    Avg: {humidity.average():0.2f} % - Now: {sensor.humidity:0.2f} %
 Dew point:   Avg: {dewpoint.average():0.2f} *C - Now: {sensor.dewpoint:0.2f} *C
