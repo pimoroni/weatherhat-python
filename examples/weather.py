@@ -31,6 +31,10 @@ COLOR_RED = (247, 0, 63)
 COLOR_BLACK = (0, 0, 0)
 COLOR_GREY = (100, 100, 100)
 
+# We can compensate for the heat of the Pi and other environmental conditions using a simple offset.
+# Change this number to adjust temperature compensation!
+OFFSET = -7.5
+
 
 class View:
     def __init__(self, image):
@@ -664,6 +668,7 @@ class SensorData:
         self.needle_trail = []
 
     def update(self, interval=5.0):
+        self.sensor.temperature_offset = OFFSET
         self.sensor.update(interval)
 
         self.temperature.append(self.sensor.temperature)
