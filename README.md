@@ -28,6 +28,12 @@ Latest/development library from GitHub:
 * `cd weatherhat-python`
 * `sudo ./install.sh`
 
+Some of the examples use additional libraries. You can install them with:
+
+``` bash
+pip3 install fonts font-manrope pyyaml adafruit-io
+```
+
 # Using The Library
 
 Import the `weatherhat` module and create an instance of the `WeatherHAT` class.
@@ -53,7 +59,7 @@ import weatherhat
 sensor = weatherhat.WeatherHAT()
 
 while True:
-    sensor.update(interval=60.0)
+    sensor.update(interval=5.0)
     time.sleep(1.0)
 ```
 
@@ -112,7 +118,7 @@ This is the temperature once an offset has been applied. This offset is fixed, a
 sensor.pressure
 ```
 
-Pressure in hextopascals.
+Pressure in hectopascals.
 
 ## Humidity
 
