@@ -69,7 +69,7 @@ pressure = sensor.pressure
 print("Discarding the first few BME280 readings...")
 sleep(10.0)
 
-# Start sending data
+# Read all the sensors and start sending data
 
 while True:
     sensor.update(interval=30.0)
