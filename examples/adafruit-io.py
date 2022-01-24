@@ -36,7 +36,7 @@ try:
     aio.create_feed(Feed(name="Wind Direction"))
     aio.create_feed(Feed(name="Rain"))
     print("Feeds created!")
-except:
+except RequestError:
     print("Feeds already exist!")
 
 temperature_feed = aio.feeds('temperature')
@@ -51,7 +51,7 @@ rain_feed = aio.feeds('rain')
 try:
     dashboard = aio.create_dashboard(Dashboard(name="Weather Dashboard"))
     print("Dashboard created!")
-except:
+except RequestError:
     print("Dashboard already exists!")
 
 dashboard = aio.dashboards('weather-dashboard')
