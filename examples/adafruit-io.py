@@ -1,6 +1,6 @@
 from time import sleep
 import weatherhat
-from Adafruit_IO import Client, Feed, Dashboard
+from Adafruit_IO import Client, Feed, Dashboard, RequestError
 
 sensor = weatherhat.WeatherHAT()
 
@@ -93,6 +93,8 @@ while True:
         aio.send_data(winddirection_feed.key, winddirection)
         aio.send_data(rain_feed.key, rain)
         print('Data sent to adafruit.io')
-    except errors.RequestError as e:
+    except RequestError as e:
         print(e)
+
+    # leave at least 30 seconds between updates for free Adafruit.io accounts
     sleep(30.0)
