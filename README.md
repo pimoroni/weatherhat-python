@@ -7,7 +7,7 @@
 
 # Pre-requisites
 
-You must enable (delete where appropriate):
+You must enable:
 
 * i2c: `sudo raspi-config nonint do_i2c 0`
 * spi: `sudo raspi-config nonint do_spi 0`
