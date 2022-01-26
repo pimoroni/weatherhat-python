@@ -238,7 +238,7 @@ class MainView(SensorView):
 
     def render_graphs(self, graph_mode=False):
         self.draw_info(0, 0, (20, 20, 220), "RAIN", self._data.rain_mm_sec.history(), "mm/s", vmax=self._settings.maximum_rain_mm, graph_mode=graph_mode)
-        self.draw_info(0, 150, (20, 20, 220), "PRES", self._data.pressure.history(), "mbar", graph_mode=graph_mode)
+        self.draw_info(0, 150, (20, 20, 220), "PRES", self._data.pressure.history(), "hPa", graph_mode=graph_mode)
         self.draw_info(0, 300, (20, 100, 220), "TEMP", self._data.temperature.history(), "°C", graph_mode=graph_mode, vmin=self._settings.minimum_temperature, vmax=self._settings.maximum_temperature)
 
         x = int(self.canvas_width / 2)
@@ -455,7 +455,7 @@ class PressureView(SensorView):
     """Pressure."""
 
     title = "PRESSURE"
-    metric = "mbar"
+    metric = "hPa"
 
     def render(self):
         SensorView.render(self)
