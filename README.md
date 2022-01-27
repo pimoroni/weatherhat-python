@@ -7,7 +7,7 @@
 
 # Pre-requisites
 
-You must enable (delete where appropriate):
+You must enable:
 
 * i2c: `sudo raspi-config nonint do_i2c 0`
 * spi: `sudo raspi-config nonint do_spi 0`
@@ -27,6 +27,12 @@ Latest/development library from GitHub:
 * `git clone https://github.com/pimoroni/weatherhat-python`
 * `cd weatherhat-python`
 * `sudo ./install.sh`
+
+Some of the examples use additional libraries. You can install them with:
+
+``` bash
+pip3 install fonts font-manrope pyyaml adafruit-io
+```
 
 # Using The Library
 
@@ -53,7 +59,7 @@ import weatherhat
 sensor = weatherhat.WeatherHAT()
 
 while True:
-    sensor.update(interval=60.0)
+    sensor.update(interval=5.0)
     time.sleep(1.0)
 ```
 
@@ -112,7 +118,7 @@ This is the temperature once an offset has been applied. This offset is fixed, a
 sensor.pressure
 ```
 
-Pressure in hextopascals.
+Pressure in hectopascals.
 
 ## Humidity
 
