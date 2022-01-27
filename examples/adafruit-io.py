@@ -75,7 +75,7 @@ while True:
     sensor.update(interval=30.0)
 
     wind_direction_cardinal = sensor.degrees_to_cardinal(sensor.wind_direction)
-           
+
     temperature = sensor.temperature
     humidity = sensor.relative_humidity
     pressure = sensor.pressure

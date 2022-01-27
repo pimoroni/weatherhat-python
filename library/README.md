@@ -209,3 +209,9 @@ sensor.rain_total
 ```
 
 Total rain amount in millimeters for the current update period.
+
+# Changelog
+0.0.1
+-----
+
+* Initial Release

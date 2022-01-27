@@ -10,7 +10,7 @@ sensor = weatherhat.WeatherHAT()
 
 while True:
     sensor.update(interval=1.0)
-    
+
     print(f"""
 Device temperature: {sensor.device_temperature:0.2f} *C
 Humidity:           {sensor.humidity:0.2f} %

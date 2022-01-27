@@ -15,10 +15,10 @@ sensor = weatherhat.WeatherHAT()
 while True:
     sensor.temperature_offset = OFFSET
     sensor.update(interval=1.0)
-    
+
     print(f"""
 Compensated air temperature: {sensor.temperature:0.2f} *C
-    Raw temperature          {sensor.device_temperature:0.2f} *C    
+    Raw temperature          {sensor.device_temperature:0.2f} *C
     With offset              {OFFSET} *C
 
 Relative humidity:           {sensor.relative_humidity:0.2f} %
