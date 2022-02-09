@@ -31,7 +31,7 @@ Latest/development library from GitHub:
 Some of the examples use additional libraries. You can install them with:
 
 ```bash
-pip3 install fonts font-manrope pyyaml adafruit-io
+pip3 install fonts font-manrope pyyaml adafruit-io numpy
 ```
 
 # Using The Library
