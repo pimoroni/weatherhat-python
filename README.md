@@ -34,6 +34,12 @@ Some of the examples use additional libraries. You can install them with:
 pip3 install fonts font-manrope pyyaml adafruit-io numpy
 ```
 
+You may also need to install `libatlas-base-dev`
+
+```
+sudo apt-get install libatlas-base-dev
+```
+
 # Using The Library
 
 Import the `weatherhat` module and create an instance of the `WeatherHAT` class.
