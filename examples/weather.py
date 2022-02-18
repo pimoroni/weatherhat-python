@@ -356,7 +356,7 @@ class WindSpeedView(SensorView):
     def render(self):
         SensorView.render(self)
         self.heading(
-            self._data.wind_speed.latest(),
+            self._data.wind_speed.latest().value,
             self.metric
         )
         self.footer(self.title.upper())
