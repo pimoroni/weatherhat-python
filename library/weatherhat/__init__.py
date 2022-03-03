@@ -83,22 +83,22 @@ class WeatherHAT:
 
         # Data API... kinda
         self.temperature_offset = -7.5
-        self.device_temperature = 0
-        self.temperature = 0
+        self.device_temperature = 0.0
+        self.temperature = 0.0
 
-        self.pressure = 0
+        self.pressure = 0.0
 
-        self.humidity = 0
-        self.relative_humidity = 0
-        self.dewpoint = 0
+        self.humidity = 0.0
+        self.relative_humidity = 0.0
+        self.dewpoint = 0.0
 
-        self.lux = 0
+        self.lux = 0.0
 
-        self.wind_speed = 0
-        self.wind_direction = 0
+        self.wind_speed = 0.0
+        self.wind_direction = 0.0
 
-        self.rain = 0
-        self.rain_total = 0
+        self.rain = 0.0
+        self.rain_total = 0.0
 
         self.reset_counts()
 
@@ -138,7 +138,7 @@ class WeatherHAT:
 
     def update(self, interval=60.0):
         # Time elapsed since last update
-        delta = time.time() - self._t_start
+        delta = float(time.time() - self._t_start)
 
         self.updated_wind_rain = False
 
