@@ -7,6 +7,8 @@
 
 # Pre-requisites
 
+This library requires Python ≥3.6 so we'd recommend using it with Raspberry Pi OS Buster or later.
+
 You must enable:
 
 * i2c: `sudo raspi-config nonint do_i2c 0`
