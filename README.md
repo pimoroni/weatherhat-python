@@ -166,7 +166,7 @@ sensor.lux
 
 Light is given in lux.
 
-Lux ranges from 0 (complete darkness) to.
+Lux ranges from 0 (complete darkness) to 64,000 (full brightness).
 
 ## Wind
 
