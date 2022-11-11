@@ -95,10 +95,10 @@ class WindSpeedHistory(History):
         return ((ms * 60 * 60) / 1000.0) * 0.621371
 
     def latest_mph(self):
-        return self.cms_to_mph(self.latest().value)
+        return self.ms_to_mph(self.latest().value)
 
     def average_mph(self, sample_over=None):
-        return self.cms_to_mph(self.average(sample_over))
+        return self.ms_to_mph(self.average(sample_over))
 
     def gust_mph(self, seconds=3.0):
         """Wind gust in miles/hour."""
