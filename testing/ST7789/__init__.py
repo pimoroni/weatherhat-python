@@ -15,7 +15,7 @@ class ST7789:
         port=0,
         cs=1,
         dc=9,
-        backlight=13,
+        backlight=12,
         spi_speed_hz=0
     ):
 
