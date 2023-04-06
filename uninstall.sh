@@ -2,7 +2,6 @@
 
 FORCE=false
 LIBRARY_NAME=`grep -m 1 name pyproject.toml | awk -F" = " '{print substr($2,2,length($2)-2)}'`
-LIBRARY_VERSION=`grep __version__ $LIBRARY_NAME/__init__.py | awk -F" = " '{print substr($2,2,length($2)-2)}'`
 RESOURCES_DIR=$HOME/Pimoroni/$LIBRARY_NAME
 PYTHON="/usr/bin/python3"
 
@@ -47,7 +46,7 @@ warning() {
 	echo -e "$(tput setaf 1)$1$(tput sgr0)"
 }
 
-printf "$LIBRARY_NAME $LIBRARY_VERSION Python Library: Uninstaller\n\n"
+printf "$LIBRARY_NAME Python Library: Uninstaller\n\n"
 
 user_check
 
