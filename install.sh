@@ -11,7 +11,6 @@ POSITIONAL_ARGS=()
 FORCE=false
 UNSTABLE=false
 PYTHON="/usr/bin/python3"
-PYDOC="/usr/bin/pydoc3"
 
 
 user_check() {
@@ -95,6 +94,10 @@ function apt_pkg_install {
 	fi
 }
 
+function pip_pkg_install {
+	PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring $PYTHON -m pip install --upgrade "$@"
+}
+
 while [[ $# -gt 0 ]]; do
 	K="$1"
 	case $K in
@@ -135,7 +138,7 @@ printf "$LIBRARY_NAME Python Library: Installer\n\n"
 
 inform "Checking Dependencies. Please wait..."
 
-PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring $PYTHON -m pip install --upgrade toml
+pip_pkg_install toml
 
 CONFIG_VARS=`$PYTHON - <<EOF
 import toml
@@ -187,9 +190,9 @@ fi
 inform "Installing for $PYTHON_VER...\n"
 apt_pkg_install "${APT_PACKAGES[@]}"
 if $UNSTABLE; then
-	PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring $PYTHON -m pip install .
+	pip_pkg_install .
 else
-	PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring $PYTHON -m pip install --upgrade $LIBRARY_NAME
+	pip_pkg_install $LIBRARY_NAME
 fi
 if [ $? -eq 0 ]; then
 	success "Done!\n"
@@ -230,13 +233,12 @@ fi
 
 printf "\n"
 
-if [ -f "$PYDOC" ]; then
+if confirm "Would you like to generate documentation?"; then
+	pip_pkg_install pdoc
 	printf "Generating documentation.\n"
-	$PYDOC -w $LIBRARY_NAME > /dev/null
-	if [ -f "$LIBRARY_NAME.html" ]; then
-		cp $LIBRARY_NAME.html $RESOURCES_DIR/docs.html
-		rm -f $LIBRARY_NAME.html
-		inform "Documentation saved to $RESOURCES_DIR/docs.html"
+	$PYTHON -m pdoc $LIBRARY_NAME -o $RESOURCES_DIR/docs > /dev/null
+	if [ $? -eq 0 ]; then
+		inform "Documentation saved to $RESOURCES_DIR/docs"
 		success "Done!"
 	else
 		warning "Error: Failed to generate documentation."
