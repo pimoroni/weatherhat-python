@@ -28,7 +28,7 @@ Latest/development library from GitHub:
 
 * `git clone https://github.com/pimoroni/weatherhat-python`
 * `cd weatherhat-python`
-* `sudo ./install.sh`
+* `./install.sh --unstable`
 
 Some of the examples use additional libraries. You can install them with:
 
