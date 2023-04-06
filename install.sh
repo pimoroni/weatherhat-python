@@ -7,7 +7,7 @@ CONFIG_BACKUP=false
 APT_HAS_UPDATED=false
 RESOURCES_TOP_DIR=$HOME/Pimoroni
 WD=`pwd`
-USAGE="sudo ./install.sh (--unstable)"
+USAGE="./install.sh (--unstable)"
 POSITIONAL_ARGS=()
 FORCE=false
 UNSTABLE=false
@@ -161,6 +161,13 @@ eval $CONFIG_VARS
 
 RESOURCES_DIR=$RESOURCES_TOP_DIR/$LIBRARY_NAME
 UNINSTALLER=$RESOURCES_DIR/uninstall.sh
+
+RES_DIR_OWNER=`stat -c "%U" $RESOURCES_TOP_DIR`
+
+if [[ "$RES_DIR_OWNER" == "root" ]]; then
+	warning "\n\nFixing $RESOURCES_TOP_DIR permissions!\n\n"
+	sudo chown -R $USER:$USER $RESOURCES_TOP_DIR
+fi
 
 mkdir -p $RESOURCES_DIR
 
