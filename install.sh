@@ -1,6 +1,5 @@
 #!/bin/bash
 LIBRARY_NAME=`grep -m 1 name pyproject.toml | awk -F" = " '{print substr($2,2,length($2)-2)}'`
-LIBRARY_VERSION=`grep __version__ $LIBRARY_NAME/__init__.py | awk -F" = " '{print substr($2,2,length($2)-2)}'`
 CONFIG=/boot/config.txt
 DATESTAMP=`date "+%Y-%m-%d-%H-%M-%S"`
 CONFIG_BACKUP=false
@@ -131,7 +130,7 @@ fi
 
 PYTHON_VER=`$PYTHON --version`
 
-printf "$LIBRARY_NAME ($LIBRARY_VERSION) Python Library: Installer\n\n"
+printf "$LIBRARY_NAME Python Library: Installer\n\n"
 
 inform "Checking Dependencies. Please wait..."
 
