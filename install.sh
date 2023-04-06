@@ -60,7 +60,7 @@ function do_config_backup {
 		CONFIG_BACKUP=true
 		FILENAME="config.preinstall-$LIBRARY_NAME-$DATESTAMP.txt"
 		inform "Backing up $CONFIG to /boot/$FILENAME\n"
-		cp $CONFIG /boot/$FILENAME
+		sudo cp $CONFIG /boot/$FILENAME
 		mkdir -p $RESOURCES_TOP_DIR/config-backups/
 		cp $CONFIG $RESOURCES_TOP_DIR/config-backups/$FILENAME
 		if [ -f "$UNINSTALLER" ]; then
@@ -90,7 +90,7 @@ function apt_pkg_install {
 		fi
 		sudo apt install -y $PACKAGES
 		if [ -f "$UNINSTALLER" ]; then
-			echo "apt uninstall -y $PACKAGES"
+			echo "apt uninstall -y $PACKAGES" >> $UNINSTALLER
 		fi
 	fi
 }
@@ -205,9 +205,9 @@ for ((i = 0; i < ${#CONFIG_TXT[@]}; i++)); do
 	if ! [ "$CONFIG_LINE" == "" ]; then
 		do_config_backup
 		inform "Adding $CONFIG_LINE to $CONFIG\n"
-		sed -i "s/^#$CONFIG_LINE/$CONFIG_LINE/" $CONFIG
+		sudo sed -i "s/^#$CONFIG_LINE/$CONFIG_LINE/" $CONFIG
 		if ! grep -q "^$CONFIG_LINE" $CONFIG; then
-			printf "$CONFIG_LINE\n" >> $CONFIG
+			printf "$CONFIG_LINE\n" | sudo tee --append $CONFIG
 		fi
 	fi
 done
