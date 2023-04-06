@@ -135,7 +135,7 @@ printf "$LIBRARY_NAME Python Library: Installer\n\n"
 
 inform "Checking Dependencies. Please wait..."
 
-$PYTHON -m pip install --upgrade toml
+PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring $PYTHON -m pip install --upgrade toml
 
 CONFIG_VARS=`$PYTHON - <<EOF
 import toml
@@ -187,9 +187,9 @@ fi
 inform "Installing for $PYTHON_VER...\n"
 apt_pkg_install "${APT_PACKAGES[@]}"
 if $UNSTABLE; then
-	$PYTHON -m pip install .
+	PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring $PYTHON -m pip install .
 else
-	$PYTHON -m pip install --upgrade $LIBRARY_NAME
+	PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring $PYTHON -m pip install --upgrade $LIBRARY_NAME
 fi
 if [ $? -eq 0 ]; then
 	success "Done!\n"
