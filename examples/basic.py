@@ -4,7 +4,7 @@ import weatherhat
 
 sensor = weatherhat.WeatherHAT()
 
-print(f"""
+print("""
 basic.py - Basic example showing how to read Weather HAT's sensors.
 Press Ctrl+C to exit!
 """)

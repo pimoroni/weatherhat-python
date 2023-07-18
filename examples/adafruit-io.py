@@ -6,7 +6,7 @@ import weatherhat
 
 sensor = weatherhat.WeatherHAT()
 
-print(f"""
+print("""
 adafruit-io.py - Example showing how to send sensor data from Weather HAT into adafruit.io.
 Sign up for an account at https://io.adafruit.com/ to obtain a username and key.
 Press Ctrl+C to exit!

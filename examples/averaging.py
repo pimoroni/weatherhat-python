@@ -3,7 +3,7 @@ import time
 import weatherhat
 from weatherhat import history
 
-print(f"""
+print("""
 averaging.py - Basic example showing how to use Weather HAT's history/averaging functions.
 Press Ctrl+C to exit!
 """)
