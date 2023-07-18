@@ -11,6 +11,17 @@ wind_degrees_to_cardinal = {
     315: "North West"
 }
 
+wind_degrees_to_short_cardinal = {
+    0: "N",
+    45: "NE",
+    90: "E",
+    135: "SE",
+    180: "S",
+    225: "SW",
+    270: "W",
+    315: "NW"
+}
+
 
 class HistoryEntry:
     __slots__ = 'value', 'timestamp'
@@ -84,10 +95,10 @@ class WindSpeedHistory(History):
         return ((ms * 60 * 60) / 1000.0) * 0.621371
 
     def latest_mph(self):
-        return self.cms_to_mph(self.latest().value)
+        return self.ms_to_mph(self.latest().value)
 
     def average_mph(self, sample_over=None):
-        return self.cms_to_mph(self.average(sample_over))
+        return self.ms_to_mph(self.average(sample_over))
 
     def gust_mph(self, seconds=3.0):
         """Wind gust in miles/hour."""
@@ -105,11 +116,24 @@ class WindDirectionHistory(History):
         value, cardinal = min(wind_degrees_to_cardinal.items(), key=lambda item: abs(item[0] - degrees))
         return cardinal
 
+    def degrees_to_short_cardinal(self, degrees):
+        value, cardinal = min(wind_degrees_to_short_cardinal.items(), key=lambda item: abs(item[0] - degrees))
+        return cardinal
+
     def average_compass(self, sample_over=None):
         return self.degrees_to_cardinal(self.average(sample_over))
+
+    def average_short_compass(self, sample_over=None):
+        return self.degrees_to_short_cardinal(self.average(sample_over))
 
     def latest_compass(self):
         return self.degrees_to_cardinal(self.latest().value)
 
+    def latest_short_compass(self):
+        return self.degrees_to_short_cardinal(self.latest().value)
+
     def history_compass(self, depth=None):
         return [HistoryEntry(self.degrees_to_cardinal(entry.value), timestamp=entry.timestamp) for entry in self.history(depth)]
+
+    def history_short_compass(self, depth=None):
+        return [HistoryEntry(self.degrees_to_short_cardinal(entry.value), timestamp=entry.timestamp) for entry in self.history(depth)]
