@@ -1,31 +1,28 @@
 #!/bin/bash
-
+LIBRARY_NAME=`grep -m 1 name pyproject.toml | awk -F" = " '{print substr($2,2,length($2)-2)}'`
+LIBRARY_VERSION=`grep __version__ $LIBRARY_NAME/__init__.py | awk -F" = " '{print substr($2,2,length($2)-2)}'`
 CONFIG=/boot/config.txt
 DATESTAMP=`date "+%Y-%m-%d-%H-%M-%S"`
 CONFIG_BACKUP=false
 APT_HAS_UPDATED=false
-USER_HOME=/home/$SUDO_USER
-RESOURCES_TOP_DIR=$USER_HOME/Pimoroni
+RESOURCES_TOP_DIR=$HOME/Pimoroni
 WD=`pwd`
 USAGE="sudo ./install.sh (--unstable)"
 POSITIONAL_ARGS=()
+FORCE=false
 UNSTABLE=false
-CODENAME=`lsb_release -sc`
+PYTHON="/usr/bin/python3"
 
-if [[ $CODENAME == "bullseye" ]]; then
-	bash ./install-bullseye.sh $@
-	exit $?
-fi
 
 user_check() {
-	if [ $(id -u) -ne 0 ]; then
-		printf "Script must be run as root. Try 'sudo ./install.sh'\n"
+	if [ $(id -u) -eq 0 ]; then
+		printf "Script should not be run as root. Try './install.sh'\n"
 		exit 1
 	fi
 }
 
 confirm() {
-	if [ "$FORCE" == '-y' ]; then
+	if $FORCE; then
 		true
 	else
 		read -r -p "$1 [y/N] " response < /dev/tty
@@ -88,10 +85,10 @@ function apt_pkg_install {
 	if ! [ "$PACKAGES" == "" ]; then
 		echo "Installing missing packages: $PACKAGES"
 		if [ ! $APT_HAS_UPDATED ]; then
-			apt update
+			sudo apt update
 			APT_HAS_UPDATED=true
 		fi
-		apt install -y $PACKAGES
+		sudo apt install -y $PACKAGES
 		if [ -f "$UNINSTALLER" ]; then
 			echo "apt uninstall -y $PACKAGES"
 		fi
@@ -103,6 +100,15 @@ while [[ $# -gt 0 ]]; do
 	case $K in
 	-u|--unstable)
 		UNSTABLE=true
+		shift
+		;;
+	-f|--force)
+		FORCE=true
+		shift
+		;;
+	-p|--python)
+		PYTHON=$2
+		shift
 		shift
 		;;
 	*)
@@ -118,27 +124,29 @@ done
 
 user_check
 
-apt_pkg_install python-configparser
+if [ ! -f "$PYTHON" ]; then
+	printf "Python path $PYTHON not found!\n"
+	exit 1
+fi
 
-CONFIG_VARS=`python - <<EOF
-from configparser import ConfigParser
-c = ConfigParser()
-c.read('library/setup.cfg')
-p = dict(c['pimoroni'])
-# Convert multi-line config entries into bash arrays
-for k in p.keys():
-    fmt = '"{}"'
-    if '\n' in p[k]:
-        p[k] = "'\n\t'".join(p[k].split('\n')[1:])
-        fmt = "('{}')"
-    p[k] = fmt.format(p[k])
+PYTHON_VER=`$PYTHON --version`
+
+printf "$LIBRARY_NAME ($LIBRARY_VERSION) Python Library: Installer\n\n"
+
+inform "Checking Dependencies. Please wait..."
+
+$PYTHON -m pip install --upgrade toml
+
+CONFIG_VARS=`$PYTHON - <<EOF
+import toml
+config = toml.load("pyproject.toml")
+p = dict(config['pimoroni'])
+# Convert list config entries into bash arrays
+for k, v in p.items():
+    v = "'\n\t'".join(v)
+    p[k] = f"('{v}')"
 print("""
-LIBRARY_NAME="{name}"
-LIBRARY_VERSION="{version}"
-""".format(**c['metadata']))
-print("""
-PY3_DEPS={py3deps}
-PY2_DEPS={py2deps}
+APT_PACKAGES={apt_packages}
 SETUP_CMDS={commands}
 CONFIG_TXT={configtxt}
 """.format(**p))
@@ -163,40 +171,22 @@ printf "an editor and remove 'exit 1' from below.\n"
 exit 1
 EOF
 
-printf "$LIBRARY_NAME $LIBRARY_VERSION Python Library: Installer\n\n"
-
 if $UNSTABLE; then
 	warning "Installing unstable library from source.\n\n"
 else
 	printf "Installing stable library from pypi.\n\n"
 fi
 
-cd library
-
-printf "Installing for Python 2..\n"
-apt_pkg_install "${PY2_DEPS[@]}"
+inform "Installing for $PYTHON_VER...\n"
+apt_pkg_install "${APT_PACKAGES[@]}"
 if $UNSTABLE; then
-	python setup.py install > /dev/null
+	$PYTHON -m pip install .
 else
-	pip install --upgrade $LIBRARY_NAME
+	$PYTHON -m pip install --upgrade $LIBRARY_NAME
 fi
 if [ $? -eq 0 ]; then
 	success "Done!\n"
-	echo "pip uninstall $LIBRARY_NAME" >> $UNINSTALLER
-fi
-
-if [ -f "/usr/bin/python3" ]; then
-	printf "Installing for Python 3..\n"
-	apt_pkg_install "${PY3_DEPS[@]}"
-	if $UNSTABLE; then
-		python3 setup.py install > /dev/null
-	else
-		pip3 install --upgrade $LIBRARY_NAME
-	fi
-	if [ $? -eq 0 ]; then
-		success "Done!\n"
-		echo "pip3 uninstall $LIBRARY_NAME" >> $UNINSTALLER
-	fi
+	echo "$PYTHON -m pip uninstall $LIBRARY_NAME" >> $UNINSTALLER
 fi
 
 cd $WD
