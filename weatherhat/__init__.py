@@ -1,15 +1,14 @@
-import time
-import threading
 import math
+import threading
+import time
 
-import RPi.GPIO as GPIO
 import ioexpander as io
+import RPi.GPIO as GPIO
 from bme280 import BME280
 from ltr559 import LTR559
 from smbus2 import SMBus
 
 from .history import wind_degrees_to_cardinal
-
 
 __version__ = '0.0.1'
 

@@ -1,10 +1,9 @@
-import time
-import threading
 import math
 import random
+import threading
+import time
 
 from .history import wind_degrees_to_cardinal
-
 
 __version__ = '0.0.1'
 

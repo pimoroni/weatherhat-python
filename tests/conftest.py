@@ -1,6 +1,7 @@
 import sys
-import pytest
+
 import mock
+import pytest
 
 
 @pytest.fixture(scope='function', autouse=True)

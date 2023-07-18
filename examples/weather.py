@@ -3,16 +3,14 @@ import math
 import pathlib
 import time
 
-import yaml
-
 import RPi.GPIO as GPIO
 import ST7789
+import yaml
 from fonts.ttf import ManropeBold as UserFont
 from PIL import Image, ImageDraw, ImageFont
 
 import weatherhat
 from weatherhat import history
-
 
 FPS = 10
 

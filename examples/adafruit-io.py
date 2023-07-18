@@ -1,6 +1,8 @@
 from time import sleep
+
+from Adafruit_IO import Client, Dashboard, Feed, RequestError
+
 import weatherhat
-from Adafruit_IO import Client, Feed, Dashboard, RequestError
 
 sensor = weatherhat.WeatherHAT()
 

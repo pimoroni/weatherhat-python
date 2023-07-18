@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from setuptools import setup, __version__
 from pkg_resources import parse_version
+from setuptools import __version__, setup
 
 minimum_version = parse_version('30.4.0')
 
