@@ -10,7 +10,7 @@ from smbus2 import SMBus
 
 from .history import wind_degrees_to_cardinal
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 # Wind Vane
