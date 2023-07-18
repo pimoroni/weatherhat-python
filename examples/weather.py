@@ -702,7 +702,7 @@ def main():
         port=0,
         cs=1,
         dc=9,
-        backlight=13,
+        backlight=12,
         spi_speed_hz=SPI_SPEED_MHZ * 1000 * 1000
     )
     image = Image.new("RGBA", (DISPLAY_WIDTH * 2, DISPLAY_HEIGHT * 2), color=(255, 255, 255))
