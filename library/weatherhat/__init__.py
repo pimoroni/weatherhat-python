@@ -129,7 +129,7 @@ class WeatherHAT:
         return temperature - ((100 - humidity) / 5)
 
     def hpa_to_inches(self, hpa):
-        """Convert hextopascals to inches of mercury."""
+        """Convert hectopascals to inches of mercury."""
         return hpa * 0.02953
 
     def degrees_to_cardinal(self, degrees):
