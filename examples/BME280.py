@@ -1,7 +1,8 @@
 import time
+
 import weatherhat
 
-print(f"""
+print("""
 BME280.py - Print raw readings from the BME280 weather sensor.
 Press Ctrl+C to exit!
 """)

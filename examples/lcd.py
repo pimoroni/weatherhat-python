@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import ST7789
-from PIL import Image, ImageDraw, ImageFont
 from fonts.ttf import ManropeBold as UserFont
+from PIL import Image, ImageDraw, ImageFont
 
-print(f"""
+print("""
 lcd.py - Hello, World! example on the 1.54" LCD.
 Press Ctrl+C to exit!
 """)

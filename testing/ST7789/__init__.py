@@ -1,8 +1,9 @@
-import tkinter
-from PIL import ImageTk
-
 import pathlib
 import sys
+import tkinter
+
+from PIL import ImageTk
+
 modpath = pathlib.Path("../").resolve()
 sys.path.insert(0, str(modpath))
 import RPi.GPIO as GPIO  # noqa: E402

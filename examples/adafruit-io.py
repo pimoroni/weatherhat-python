@@ -1,10 +1,12 @@
 from time import sleep
+
+from Adafruit_IO import Client, Dashboard, Feed, RequestError
+
 import weatherhat
-from Adafruit_IO import Client, Feed, Dashboard, RequestError
 
 sensor = weatherhat.WeatherHAT()
 
-print(f"""
+print("""
 adafruit-io.py - Example showing how to send sensor data from Weather HAT into adafruit.io.
 Sign up for an account at https://io.adafruit.com/ to obtain a username and key.
 Press Ctrl+C to exit!

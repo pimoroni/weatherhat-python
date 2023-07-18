@@ -4,9 +4,9 @@ def test_setup(gpio, ioe, bme280, ltr559, smbus2):
 
     bus = smbus2.SMBus(1)
 
-    bme280.BME280.called_once_with(i2c_dev=bus)
-    ltr559.LTR559.called_once_with(i2c_dev=bus)
-    ioe.IOE.called_once_with(i2c_addr=0x12, interrupt_pin=4)
+    bme280.BME280.assert_called_once_with(i2c_dev=bus)
+    ltr559.LTR559.assert_called_once_with(i2c_dev=bus)
+    ioe.IOE.assert_called_once_with(i2c_addr=0x12, interrupt_pin=4)
 
     del library
 

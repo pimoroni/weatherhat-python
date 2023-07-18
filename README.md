@@ -1,6 +1,6 @@
 # Weather HAT Python Library & Examples
 
-[![Build Status](https://shields.io/github/workflow/status/pimoroni/weatherhat-python/Python%20Tests.svg)](https://github.com/pimoroni/weatherhat-python/actions/workflows/test.yml)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/pimoroni/weatherhat-python/test.yml?branch=main)](https://github.com/pimoroni/weatherhat-python/actions/workflows/test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/pimoroni/weatherhat-python/badge.svg?branch=master)](https://coveralls.io/github/pimoroni/weatherhat-python?branch=master)
 [![PyPi Package](https://img.shields.io/pypi/v/weatherhat.svg)](https://pypi.python.org/pypi/weatherhat)
 [![Python Versions](https://img.shields.io/pypi/pyversions/weatherhat.svg)](https://pypi.python.org/pypi/weatherhat)
@@ -28,7 +28,7 @@ Latest/development library from GitHub:
 
 * `git clone https://github.com/pimoroni/weatherhat-python`
 * `cd weatherhat-python`
-* `sudo ./install.sh`
+* `./install.sh --unstable`
 
 Some of the examples use additional libraries. You can install them with:
 
