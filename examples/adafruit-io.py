@@ -12,14 +12,14 @@ Sign up for an account at https://io.adafruit.com/ to obtain a username and key.
 Press Ctrl+C to exit!
 """)
 
+# Set to your Adafruit IO username.
+# (go to https://accounts.adafruit.com to find your username)
+ADAFRUIT_IO_USERNAME = 'YOUR AIO USERNAME HERE'
+
 # Set to your Adafruit IO key.
 # Remember, your key is a secret,
 # so make sure not to publish it when you publish this code!
 ADAFRUIT_IO_KEY = 'YOUR AIO KEY HERE'
-
-# Set to your Adafruit IO username.
-# (go to https://accounts.adafruit.com to find your username)
-ADAFRUIT_IO_USERNAME = 'YOUR AIO USERNAME HERE'
 
 # We can compensate for the heat of the Pi and other environmental conditions using a simple offset.
 # Change this number to adjust temperature compensation!
@@ -39,7 +39,7 @@ try:
     aio.create_feed(Feed(name="Rain"))
     print("Feeds created!")
 except RequestError:
-    print("Feeds already exist!")
+    print("Feeds not created - perhaps they already exist?")
 
 temperature_feed = aio.feeds('temperature')
 humidity_feed = aio.feeds('relative-humidity')
@@ -54,7 +54,7 @@ try:
     dashboard = aio.create_dashboard(Dashboard(name="Weather Dashboard"))
     print("Dashboard created!")
 except RequestError:
-    print("Dashboard already exists!")
+    print("Dashboard not created - perhaps it already exists?")
 
 dashboard = aio.dashboards('weather-dashboard')
 
