@@ -35,10 +35,10 @@ classifiers = [
     "Topic :: System :: Hardware",
 ]
 dependencies = [
-    "pimoroni-bme280",
-	"ltr559",
-	"pimoroni-ioexpander",
-	"st7789",
+    "pimoroni-bme280 >= 1.0.0",
+	"ltr559 >= 1.0.0",
+	"pimoroni-ioexpander >= 1.0.1",
+	"st7789 >= 1.0.0",
 	"smbus2"
 ]
 
@@ -116,7 +116,7 @@ ignore = [
     'requirements-dev.txt'
 ]
 
-[pimoroni]
+[tool.pimoroni]
 apt_packages = []
 configtxt = []
 commands = [
