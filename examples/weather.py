@@ -2,9 +2,13 @@
 import math
 import pathlib
 import time
+import select
 
-import RPi.GPIO as GPIO
-import ST7789
+
+import gpiod
+import gpiodevice
+from gpiod.line import Bias, Edge
+import st7789
 import yaml
 from fonts.ttf import ManropeBold as UserFont
 from PIL import Image, ImageDraw, ImageFont
@@ -94,7 +98,7 @@ class SensorView(View):
         else:
             data = "{:0.0f}".format(data)
 
-        tw, th = self._draw.textsize(data, self.font_large)
+        _, _, tw, th = self._draw.textbbox((0, 0), data, self.font_large)
 
         self._draw.text(
             (0, 32),
@@ -326,7 +330,7 @@ class WindDirectionView(SensorView):
             y = oy - math.cos(p) * radius
 
             name = "".join([word[0] for word in name.split(" ")])
-            tw, th = self._draw.textsize(name, font=self.font_small)
+            _, _, tw, th = self._draw.textbbox((0, 0), name, font=self.font_small)
             x -= tw / 2
             y -= th / 2
             self._draw.text((x, y), name, font=self.font_small, fill=COLOR_GREY)
@@ -507,12 +511,21 @@ class ViewController:
         self._current_view = 0
         self._current_subview = 0
 
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        #GPIO.setmode(GPIO.BCM)
+        #GPIO.setwarnings(False)
+        #GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
+        #for pin in BUTTONS:
+        #    GPIO.add_event_detect(pin, GPIO.FALLING, self.handle_button, bouncetime=200)
+
+        config = {}
         for pin in BUTTONS:
-            GPIO.add_event_detect(pin, GPIO.FALLING, self.handle_button, bouncetime=200)
+            config[pin] = gpiod.LineSettings(edge_detection=Edge.FALLING, bias=Bias.PULL_UP)
+
+        chip = gpiodevice.find_chip_by_platform()
+        self._buttons = chip.request_lines(consumer="LTR559", config=config)
+        self._poll = select.poll()
+        self._poll.register(self._buttons.fd, select.POLLIN)
 
     def handle_button(self, pin):
         index = BUTTONS.index(pin)
@@ -562,6 +575,9 @@ class ViewController:
         return self.get_current_view()
 
     def update(self):
+        if self._poll.poll(10):
+            for event in self._buttons.read_edge_events():
+                self.handle_button(event.line_offset)
         self.view.update()
 
     def render(self):
@@ -695,7 +711,7 @@ class SensorData:
 
 
 def main():
-    display = ST7789.ST7789(
+    display = st7789.ST7789(
         rotation=90,
         port=0,
         cs=1,
