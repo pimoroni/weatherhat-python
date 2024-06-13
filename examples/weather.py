@@ -198,7 +198,7 @@ class MainView(SensorView):
             vmax = max(vmax, max([h.value for h in data]))  # auto ranging?
             self.graph(data, x + o_x + 30, y + 20, 180, 64, vmin=vmin, vmax=vmax, bar_width=20, colors=[color])
         else:
-            if type(data) is list:
+            if isinstance(data, list):
                 if len(data) > 0:
                     data = data[-1].value
                 else:
