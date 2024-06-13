@@ -153,7 +153,7 @@ class WeatherHAT:
     def degrees_to_cardinal(self, degrees):
         value, cardinal = min(wind_degrees_to_cardinal.items(), key=lambda item: abs(item[0] - degrees))
         return cardinal
-    
+
     def _t_poll_ioexpander(self):
         self._polling = True
         poll = select.poll()
