@@ -1,13 +1,13 @@
 import math
+import select
 import threading
 import time
-import select
 
-import ioexpander as io
 import gpiod
 import gpiodevice
-from gpiod.line import Bias, Edge
+import ioexpander as io
 from bme280 import BME280
+from gpiod.line import Bias, Edge
 from ltr559 import LTR559
 from smbus2 import SMBus
 

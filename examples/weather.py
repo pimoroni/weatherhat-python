@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 import math
 import pathlib
-import time
 import select
-
+import time
 
 import gpiod
 import gpiodevice
-from gpiod.line import Bias, Edge
 import st7789
 import yaml
 from fonts.ttf import ManropeBold as UserFont
+from gpiod.line import Bias, Edge
 from PIL import Image, ImageDraw, ImageFont
 
 import weatherhat
