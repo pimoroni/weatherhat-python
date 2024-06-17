@@ -1,41 +1,47 @@
-import signal
+import select
+from datetime import timedelta
 
-import RPi.GPIO as GPIO
+import gpiod
+import gpiodevice
+from gpiod.line import Bias, Edge
 
 print("""buttons.py - Detect which button has been pressed
 This example should demonstrate how to:
-1. set up RPi.GPIO to read buttons,
+1. set up gpiod to read buttons,
 2. determine which button has been pressed
 Press Ctrl+C to exit!
 """)
 
+IP_PU_FE = gpiod.LineSettings(edge_detection=Edge.FALLING, bias=Bias.PULL_UP, debounce_period=timedelta(milliseconds=20))
+
 # The buttons on Weather HAT are connected to pins 5, 6, 16 and 24
-BUTTONS = [5, 6, 16, 24]
+# They short to ground, so we must Bias them with the PULL_UP resistor
+# and watch for a falling-edge.
+BUTTONS = {5: IP_PU_FE, 6: IP_PU_FE, 16: IP_PU_FE, 24: IP_PU_FE}
 
 # These correspond to buttons A, B, X and Y respectively
-LABELS = ['A', 'B', 'X', 'Y']
+LABELS = {5: 'A', 6: 'B', 16: 'X', 24: 'Y'}
 
-# Set up RPi.GPIO with the "BCM" numbering scheme
-GPIO.setmode(GPIO.BCM)
-
-# Buttons connect to ground when pressed, so we should set them up
-# with a "PULL UP", which weakly pulls the input signal to 3.3V.
-GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
+# Request the button pins from the gpiochip
+chip = gpiodevice.find_chip_by_platform()
+lines = chip.request_lines(
+            consumer="buttons.py",
+            config=BUTTONS
+        )
 
 # "handle_button" will be called every time a button is pressed
 # It receives one argument: the associated input pin.
 def handle_button(pin):
-    label = LABELS[BUTTONS.index(pin)]
+    label = LABELS[pin]
     print("Button press detected on pin: {} label: {}".format(pin, label))
 
+# read_edge_events does not allow us to specify a timeout
+# so we'll use poll to check if any events are waiting for us...
+poll = select.poll()
+poll.register(lines.fd, select.POLLIN)
 
-# Loop through out buttons and attach the "handle_button" function to each
-# We're watching the "FALLING" edge (transition from 3.3V to Ground) and
-# picking a generous bouncetime of 100ms to smooth out button presses.
-for pin in BUTTONS:
-    GPIO.add_event_detect(pin, GPIO.FALLING, handle_button, bouncetime=100)
-
-# Finally, since button handlers don't require a "while True" loop,
-# we pause the script to prevent it exiting immediately.
-signal.pause()
+# Poll for button events
+while True:
+    if poll.poll(10):
+        for event in lines.read_edge_events():
+            handle_button(event.line_offset)
