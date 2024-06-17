@@ -3,6 +3,7 @@ import math
 import pathlib
 import select
 import time
+from datetime import timedelta
 
 import gpiod
 import gpiodevice
@@ -519,7 +520,11 @@ class ViewController:
 
         config = {}
         for pin in BUTTONS:
-            config[pin] = gpiod.LineSettings(edge_detection=Edge.FALLING, bias=Bias.PULL_UP)
+            config[pin] = gpiod.LineSettings(
+                edge_detection=Edge.FALLING,
+                bias=Bias.PULL_UP,
+                debounce_period=timedelta(milliseconds=20)
+            )
 
         chip = gpiodevice.find_chip_by_platform()
         self._buttons = chip.request_lines(consumer="LTR559", config=config)
