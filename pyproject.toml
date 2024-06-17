@@ -38,7 +38,7 @@ dependencies = [
     "pimoroni-bme280 >= 1.0.0",
 	"ltr559 >= 1.0.0",
 	"pimoroni-ioexpander >= 1.0.1",
-	"st7789 >= 1.0.0",
+	"st7789 >= 1.0.1",
 	"smbus2"
 ]
 
