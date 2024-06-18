@@ -121,6 +121,6 @@ apt_packages = []
 configtxt = []
 commands = [
     "printf \"Setting up i2c and SPI..\n\"",
-	"raspi-config nonint do_spi 0",
-	"raspi-config nonint do_i2c 0"
+    "sudo raspi-config nonint do_spi 0",
+    "sudo raspi-config nonint do_i2c 0"
 ]
