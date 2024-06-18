@@ -1,0 +1,6 @@
+fonts
+font-manrope
+pyyaml
+adafruit-io
+numpy
+pillow
