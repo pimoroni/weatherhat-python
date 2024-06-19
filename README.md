@@ -48,11 +48,17 @@ cd weatherhat-python
 ./install.sh --unstable
 ```
 
-## Install stable library using PyPi (no examples or pre-requisites)
+## Install stable library using PyPi
 
 * Just run `pip3 install weatherhat`
 
-In some cases you may need to use `sudo` or install pip with: `sudo apt install python3-pip`
+In some cases you may need to use `sudo` or install pip with: `sudo apt install python3-pip`. 
+
+Note that in recent versions of Raspberry Pi OS, Python packages must be installed into a [virtual environment](https://www.raspberrypi.com/documentation/computers/os.html#install-python-libraries-using-pip).
+
+You will also need to manually install pre-requisites and download the examples.
+
+### Pre-requisites
 
 You must enable:
 
