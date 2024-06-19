@@ -9,8 +9,8 @@ Weather HAT is a tidy all-in-one solution for hooking up climate and environment
 
 ## Where to buy
 
-- [Weather HAT](https://shop.pimoroni.com/products/weather-hat-only)
-- [Weather HAT + Weather Sensors Kit](https://shop.pimoroni.com/products/weather-hat)
+* [Weather HAT](https://shop.pimoroni.com/products/weather-hat-only)
+* [Weather HAT + Weather Sensors Kit](https://shop.pimoroni.com/products/weather-hat)
 
 # Installing
 
@@ -48,26 +48,21 @@ cd weatherhat-python
 ./install.sh --unstable
 ```
 
-## Install stable library using PyPi
+## Install stable library from PyPi and configure manually
 
-* Just run `pip3 install weatherhat`
+* `python3 -m venv --system-site-packages $HOME/.virtualenvs/pimoroni`
+* `python3 pip3 install weatherhat`
 
-In some cases you may need to use `sudo` or install pip with: `sudo apt install python3-pip`. 
+In some cases you may need to us `sudo` or install pip with: `sudo apt install python3-pip`.
 
-Note that in recent versions of Raspberry Pi OS, Python packages must be installed into a [virtual environment](https://www.raspberrypi.com/documentation/computers/os.html#install-python-libraries-using-pip).
-
-You will also need to manually install pre-requisites and download the examples.
-
-### Pre-requisites
-
-You must enable:
+This will not make any configuration changes, so you may also need to enable:
 
 * i2c: `sudo raspi-config nonint do_i2c 0`
 * spi: `sudo raspi-config nonint do_spi 0`
 
 You can optionally run `sudo raspi-config` or the graphical Raspberry Pi Configuration UI to enable interfaces.
 
-Some of the examples use additional libraries. You can install them with:
+Some of the examples have additional dependencies. You can install them with:
 
 ```bash
 pip3 install fonts font-manrope pyyaml adafruit-io numpy pillow
