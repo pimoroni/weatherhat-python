@@ -5,9 +5,56 @@
 [![PyPi Package](https://img.shields.io/pypi/v/weatherhat.svg)](https://pypi.python.org/pypi/weatherhat)
 [![Python Versions](https://img.shields.io/pypi/pyversions/weatherhat.svg)](https://pypi.python.org/pypi/weatherhat)
 
-# Pre-requisites
+Weather HAT is a tidy all-in-one solution for hooking up climate and environmental sensors to a Raspberry Pi. It has a bright 1.54" LCD screen and four buttons for inputs. The onboard sensors can measure temperature, humidity, pressure and light. The RJ11 connectors will let you easily attach wind and rain sensors. It will work with any Raspberry Pi with a 40 pin header.
 
-This library requires Python ≥3.6 so we'd recommend using it with Raspberry Pi OS Buster or later.
+## Where to buy
+
+- [Weather HAT](https://shop.pimoroni.com/products/weather-hat-only)
+- [Weather HAT + Weather Sensors Kit](https://shop.pimoroni.com/products/weather-hat)
+
+# Installing
+
+We'd recommend using this library with Raspberry Pi OS Bookworm or later. It requires Python ≥3.6.
+
+## Full install (recommended):
+
+We've created an easy installation script that will install all pre-requisites and get your Weather HAT
+up and running with minimal efforts. To run it, fire up Terminal which you'll find in Menu -> Accessories -> Terminal
+on your Raspberry Pi desktop, as illustrated below:
+
+![Finding the terminal](http://get.pimoroni.com/resources/github-repo-terminal.png)
+
+In the new terminal window type the commands exactly as it appears below (check for typos) and follow the on-screen instructions:
+
+```bash
+git clone https://github.com/pimoroni/weatherhat-python
+cd weatherhat-python
+./install.sh
+```
+
+**Note** Libraries will be installed in the "pimoroni" virtual environment, you will need to activate it to run examples:
+
+```
+source ~/.virtualenvs/pimoroni/bin/activate
+```
+
+## Development:
+
+If you want to contribute, or like living on the edge of your seat by having the latest code, you can install the development version like so:
+
+```bash
+git clone https://github.com/pimoroni/weatherhat-python
+cd weatherhat-python
+./install.sh --unstable
+```
+
+## Install stable library using PyPi (no examples or pre-requisites)
+
+You can also install the stable library using PyPi:
+
+* Just run `pip3 install weatherhat`
+
+In some cases you may need to use `sudo` or install pip with: `sudo apt install python3-pip`
 
 You must enable:
 
@@ -16,30 +63,16 @@ You must enable:
 
 You can optionally run `sudo raspi-config` or the graphical Raspberry Pi Configuration UI to enable interfaces.
 
-# Installing
-
-Stable library from PyPi:
-
-* Just run `pip3 install weatherhat`
-
-In some cases you may need to use `sudo` or install pip with: `sudo apt install python3-pip`
-
-Latest/development library from GitHub:
-
-* `git clone https://github.com/pimoroni/weatherhat-python`
-* `cd weatherhat-python`
-* `./install.sh --unstable`
-
 Some of the examples use additional libraries. You can install them with:
 
 ```bash
-pip3 install fonts font-manrope pyyaml adafruit-io numpy
+pip3 install fonts font-manrope pyyaml adafruit-io numpy pillow
 ```
 
-You may also need to install `libatlas-base-dev`
+You may also need to install `libatlas-base-dev`:
 
 ```
-sudo apt-get install libatlas-base-dev
+sudo apt install libatlas-base-dev
 ```
 
 # Using The Library
