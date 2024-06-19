@@ -50,8 +50,6 @@ cd weatherhat-python
 
 ## Install stable library using PyPi (no examples or pre-requisites)
 
-You can also install the stable library using PyPi:
-
 * Just run `pip3 install weatherhat`
 
 In some cases you may need to use `sudo` or install pip with: `sudo apt install python3-pip`
