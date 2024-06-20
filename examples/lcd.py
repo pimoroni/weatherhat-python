@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
 
-import ST7789
+from st7789 import ST7789
 from fonts.ttf import ManropeBold as UserFont
 from PIL import Image, ImageDraw, ImageFont
 
-print("""
+print(
+    """
 lcd.py - Hello, World! example on the 1.54" LCD.
 Press Ctrl+C to exit!
-""")
+"""
+)
 
 SPI_SPEED_MHZ = 80
 
 # Create LCD class instance.
-disp = ST7789.ST7789(
+disp = ST7789(
     rotation=90,
     port=0,
     cs=1,
     dc=9,
     backlight=12,
-    spi_speed_hz=SPI_SPEED_MHZ * 1000 * 1000
+    spi_speed_hz=SPI_SPEED_MHZ * 1000 * 1000,
 )
 
 # Initialize display.
@@ -29,7 +31,7 @@ WIDTH = disp.width
 HEIGHT = disp.height
 
 # New canvas to draw on.
-img = Image.new('RGB', (WIDTH, HEIGHT), color=(0, 0, 0))
+img = Image.new("RGB", (WIDTH, HEIGHT), color=(0, 0, 0))
 draw = ImageDraw.Draw(img)
 
 # Text settings.
@@ -39,7 +41,7 @@ text_colour = (255, 255, 255)
 back_colour = (0, 170, 170)
 
 message = "Hello, World!"
-size_x, size_y = draw.textsize(message, font)
+_, _, size_x, size_y = draw.textbbox((0, 0), message, font)
 
 # Calculate text position
 x = (WIDTH - size_x) / 2
