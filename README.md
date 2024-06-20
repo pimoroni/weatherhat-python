@@ -50,8 +50,9 @@ cd weatherhat-python
 
 ## Install stable library from PyPi and configure manually
 
-* `python3 -m venv --system-site-packages $HOME/.virtualenvs/pimoroni`
-* `python3 pip3 install weatherhat`
+* Set up a virtual environment: `python3 -m venv --system-site-packages $HOME/.virtualenvs/pimoroni`
+* Switch to the virtual environment: `source ~/.virtualenvs/pimoroni/bin/activate`
+* Install the library: `pip install weatherhat`
 
 In some cases you may need to us `sudo` or install pip with: `sudo apt install python3-pip`.
 
@@ -65,7 +66,7 @@ You can optionally run `sudo raspi-config` or the graphical Raspberry Pi Configu
 Some of the examples have additional dependencies. You can install them with:
 
 ```bash
-pip3 install fonts font-manrope pyyaml adafruit-io numpy pillow
+pip install fonts font-manrope pyyaml adafruit-io numpy pillow
 ```
 
 You may also need to install `libatlas-base-dev`:
