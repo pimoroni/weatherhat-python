@@ -1,17 +1,19 @@
 import math
+import select
 import threading
 import time
 
+import gpiod
+import gpiodevice
 import ioexpander as io
-import RPi.GPIO as GPIO
 from bme280 import BME280
+from gpiod.line import Bias, Edge
 from ltr559 import LTR559
 from smbus2 import SMBus
 
 from .history import wind_degrees_to_cardinal
 
-__version__ = '0.0.2'
-
+__version__ = '1.0.0'
 
 # Wind Vane
 PIN_WV = 8     # P0.3 ANE6
@@ -46,16 +48,25 @@ wind_direction_to_degrees = {
 class WeatherHAT:
     def __init__(self):
         self.updated_wind_rain = False
+        self._interrupt_pin = 4
         self._lock = threading.Lock()
         self._i2c_dev = SMBus(1)
 
         self._bme280 = BME280(i2c_dev=self._i2c_dev)
         self._ltr559 = LTR559(i2c_dev=self._i2c_dev)
 
-        self._ioe = io.IOE(i2c_addr=0x12, interrupt_pin=4)
+        self._ioe = io.IOE(i2c_addr=0x12)
 
-        # Fudge to enable pull-up on interrupt pin
-        self._ioe._gpio.setup(self._ioe._interrupt_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        self._chip = gpiodevice.find_chip_by_platform()
+
+        self._int = self._chip.request_lines(
+            consumer="weatherhat",
+            config={
+                self._interrupt_pin: gpiod.LineSettings(
+                    edge_detection=Edge.FALLING, bias=Bias.PULL_UP
+                )
+            }
+        )
 
         # Input voltage of IO Expander, this is 3.3 on Breakout Garden
         self._ioe.set_adc_vref(3.3)
@@ -77,8 +88,6 @@ class WeatherHAT:
         self._ioe.set_mode(PIN_R5, io.IN_PU)
         self._ioe.output(PIN_R3, 0)
         self._ioe.set_pin_interrupt(PIN_R4, True)
-        self._ioe.on_interrupt(self.handle_ioe_interrupt)
-        self._ioe.clear_interrupt()
 
         # Data API... kinda
         self.temperature_offset = -7.5
@@ -100,6 +109,16 @@ class WeatherHAT:
         self.rain_total = 0.0
 
         self.reset_counts()
+
+        self._poll_thread = threading.Thread(target=self._t_poll_ioexpander)
+        self._poll_thread.start()
+
+        self._ioe.enable_interrupt_out()
+        self._ioe.clear_interrupt()
+
+    def __del__(self):
+        self._polling = False
+        self._poll_thread.join()
 
     def reset_counts(self):
         self._lock.acquire(blocking=True)
@@ -135,7 +154,20 @@ class WeatherHAT:
         value, cardinal = min(wind_degrees_to_cardinal.items(), key=lambda item: abs(item[0] - degrees))
         return cardinal
 
+    def _t_poll_ioexpander(self):
+        self._polling = True
+        poll = select.poll()
+        poll.register(self._int.fd, select.POLLIN)
+        while self._polling:
+            if not poll.poll(10):
+                continue
+            for event in self._int.read_edge_events():
+                if event.line_offset == self._interrupt_pin:
+                    self.handle_ioe_interrupt()
+            time.sleep(1.0 / 100)
+
     def update(self, interval=60.0):
+
         # Time elapsed since last update
         delta = float(time.time() - self._t_start)
 
@@ -181,7 +213,7 @@ class WeatherHAT:
 
         self.rain = rain_hz * RAIN_MM_PER_TICK
 
-    def handle_ioe_interrupt(self, pin):
+    def handle_ioe_interrupt(self):
         self._lock.acquire(blocking=True)
         self._ioe.clear_interrupt()
 

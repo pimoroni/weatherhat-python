@@ -29,13 +29,22 @@ def smbus2():
     del sys.modules['smbus2']
 
 
-@pytest.fixture(scope='function', autouse=False)
-def gpio():
-    sys.modules['RPi'] = mock.MagicMock()
-    sys.modules['RPi.GPIO'] = mock.MagicMock()
-    yield sys.modules['RPi.GPIO']
-    del sys.modules['RPi.GPIO']
-    del sys.modules['RPi']
+@pytest.fixture(scope="function", autouse=False)
+def gpiod():
+    """Mock gpiod module."""
+    sys.modules["gpiod"] = mock.MagicMock()
+    sys.modules["gpiod.line"] = mock.MagicMock()
+    yield sys.modules["gpiod"]
+    del sys.modules["gpiod"]
+
+
+@pytest.fixture(scope="function", autouse=False)
+def gpiodevice():
+    """Mock gpiodevice module."""
+    sys.modules["gpiodevice"] = mock.MagicMock()
+    sys.modules["gpiodevice"].get_pin.return_value = (mock.Mock(), 0)
+    yield sys.modules["gpiodevice"]
+    del sys.modules["gpiodevice"]
 
 
 @pytest.fixture(scope='function', autouse=False)
