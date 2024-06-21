@@ -13,7 +13,7 @@ from smbus2 import SMBus
 
 from .history import wind_degrees_to_cardinal
 
-__version__ = '0.0.2'
+__version__ = '1.0.0'
 
 # Wind Vane
 PIN_WV = 8     # P0.3 ANE6
