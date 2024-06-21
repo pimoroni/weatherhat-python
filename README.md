@@ -14,7 +14,7 @@ Weather HAT is a tidy all-in-one solution for hooking up climate and environment
 
 # Installing
 
-We'd recommend using this library with Raspberry Pi OS Bookworm or later. It requires Python ≥3.6.
+We'd recommend using this library with Raspberry Pi OS Bookworm or later. It requires Python ≥3.7.
 
 ## Full install (recommended):
 
