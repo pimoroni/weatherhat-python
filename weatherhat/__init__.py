@@ -1,9 +1,7 @@
 import math
-import select
 import threading
 import time
 
-import gpiod
 import gpiodevice
 import ioexpander as io
 from bme280 import BME280
@@ -57,17 +55,6 @@ class WeatherHAT:
 
         self._ioe = io.IOE(i2c_addr=0x12)
 
-        self._chip = gpiodevice.find_chip_by_platform()
-
-        self._int = self._chip.request_lines(
-            consumer="weatherhat",
-            config={
-                self._interrupt_pin: gpiod.LineSettings(
-                    edge_detection=Edge.FALLING, bias=Bias.PULL_UP
-                )
-            }
-        )
-
         # Input voltage of IO Expander, this is 3.3 on Breakout Garden
         self._ioe.set_adc_vref(3.3)
 
@@ -110,15 +97,20 @@ class WeatherHAT:
 
         self.reset_counts()
 
-        self._poll_thread = threading.Thread(target=self._t_poll_ioexpander)
-        self._poll_thread.start()
+        self._watch = gpiodevice.watch_pin(
+            self._interrupt_pin,
+            edge=Edge.FALLING,
+            bias=Bias.PULL_UP,
+            callback=self._on_ioe_interrupt,
+        )
 
         self._ioe.enable_interrupt_out()
         self._ioe.clear_interrupt()
 
     def __del__(self):
-        self._polling = False
-        self._poll_thread.join()
+        watch = getattr(self, "_watch", None)
+        if watch is not None:
+            watch.close()
 
     def reset_counts(self):
         self._lock.acquire(blocking=True)
@@ -154,17 +146,8 @@ class WeatherHAT:
         value, cardinal = min(wind_degrees_to_cardinal.items(), key=lambda item: abs(item[0] - degrees))
         return cardinal
 
-    def _t_poll_ioexpander(self):
-        self._polling = True
-        poll = select.poll()
-        poll.register(self._int.fd, select.POLLIN)
-        while self._polling:
-            if not poll.poll(10):
-                continue
-            for event in self._int.read_edge_events():
-                if event.line_offset == self._interrupt_pin:
-                    self.handle_ioe_interrupt()
-            time.sleep(1.0 / 100)
+    def _on_ioe_interrupt(self, event):
+        self.handle_ioe_interrupt()
 
     def update(self, interval=60.0):
 
