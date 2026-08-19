@@ -160,18 +160,14 @@ class WeatherHAT:
         poll.register(self._int.fd, select.POLLIN)
         
         while self._polling:
-            events = poll.poll(500)
+            if not poll.poll(500):
+                continue
+
+            for event in self._int.read_edge_events():
+                if event.line_offset == self._interrupt_pin:
+                    self.handle_ioe_interrupt()
             
-            if events:
-                try:
-                    for event in self._int.read_edge_events():
-                        if event.line_offset == self._interrupt_pin:
-                            self.handle_ioe_interrupt()
-                except Exception:
-                    pass
-            
-            # RECOVERY FIX: Periodically force-clear the helper chip 
-            # so it never gets permanently stuck holding the line low.
+            # Clear the interrupt line to prevent it freezing up.
             self._lock.acquire(blocking=True)
             try:
                 self._ioe.clear_interrupt()
