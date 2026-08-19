@@ -158,13 +158,25 @@ class WeatherHAT:
         self._polling = True
         poll = select.poll()
         poll.register(self._int.fd, select.POLLIN)
+        
         while self._polling:
-            if not poll.poll(10):
+            if not poll.poll(500):
                 continue
+
             for event in self._int.read_edge_events():
                 if event.line_offset == self._interrupt_pin:
                     self.handle_ioe_interrupt()
-            time.sleep(1.0 / 100)
+            
+            # Clear the interrupt line to prevent it freezing up.
+            self._lock.acquire(blocking=True)
+            try:
+                self._ioe.clear_interrupt()
+            except Exception:
+                pass
+            finally:
+                self._lock.release()
+
+            time.sleep(0.01)
 
     def update(self, interval=60.0):
 
