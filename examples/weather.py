@@ -93,12 +93,9 @@ class SensorView(View):
         return tuple([int((a[i] * blend_a) + (b[i] * blend_b)) for i in range(3)])
 
     def heading(self, data, units):
-        if data < 100:
-            data = "{:0.1f}".format(data)
-        else:
-            data = "{:0.0f}".format(data)
+        data = f"{data:0.1f}" if data < 100 else f"{data:0.0f}"
 
-        _, _, tw, th = self._draw.textbbox((0, 0), data, self.font_large)
+        _, _, tw, _th = self._draw.textbbox((0, 0), data, self.font_large)
 
         self._draw.text(
             (0, 32),
@@ -151,10 +148,7 @@ class SensorView(View):
 
             offset_y = graph_y
 
-            if vmin < 0:
-                bar_height = midpoint_y * float(v) / float(vmax)
-            else:
-                bar_height = midpoint_y * float(v - vmin) / float(vmax - vmin)
+            bar_height = midpoint_y * float(v) / float(vmax) if vmin < 0 else midpoint_y * float(v - vmin) / float(vmax - vmin)
 
             if v < 0:
                 offset_y += midpoint_y
@@ -200,15 +194,9 @@ class MainView(SensorView):
             self.graph(data, x + o_x + 30, y + 20, 180, 64, vmin=vmin, vmax=vmax, bar_width=20, colors=[color])
         else:
             if isinstance(data, list):
-                if len(data) > 0:
-                    data = data[-1].value
-                else:
-                    data = 0
+                data = data[-1].value if len(data) > 0 else 0
 
-            if data < 100:
-                data = "{:0.1f}".format(data)
-            else:
-                data = "{:0.0f}".format(data)
+            data = f"{data:0.1f}" if data < 100 else f"{data:0.0f}"
 
             self._draw.text(
                 (x + w + o_x, y + 20 + 32),  # Position is the right, center of the text
@@ -637,23 +625,20 @@ class Config:
             return False
 
         try:
-            self._config = yaml.safe_load(open(self._file))
+            with open(self._file) as config_file:
+                self._config = yaml.safe_load(config_file)
         except yaml.parser.ParserError as e:
             raise yaml.parser.ParserError(
-                "Error parsing settings file: {} ({})".format(self._file, e)
-            )
+                f"Error parsing settings file: {self._file} ({e})"
+            ) from e
 
     @property
     def _config(self):
-        options = {}
-        for k, v in self.__dict__.items():
-            if not k.startswith("_"):
-                options[k] = v
-        return options
+        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
 
     @_config.setter
     def _config(self, config):
-        for k, v in self.__dict__.items():
+        for k in self.__dict__:
             if k in config:
                 setattr(self, k, config[k])
 

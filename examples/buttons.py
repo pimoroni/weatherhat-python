@@ -33,7 +33,7 @@ lines = chip.request_lines(
 # It receives one argument: the associated input pin.
 def handle_button(pin):
     label = LABELS[pin]
-    print("Button press detected on pin: {} label: {}".format(pin, label))
+    print(f"Button press detected on pin: {pin} label: {label}")
 
 # read_edge_events does not allow us to specify a timeout
 # so we'll use poll to check if any events are waiting for us...

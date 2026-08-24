@@ -1,6 +1,7 @@
+import contextlib
 import sys
+from unittest import mock
 
-import mock
 import pytest
 
 
@@ -12,10 +13,8 @@ def cleanup():
     """
 
     yield None
-    try:
+    with contextlib.suppress(KeyError):
         del sys.modules["weatherhat"]
-    except KeyError:
-        pass
 
 
 @pytest.fixture(scope='function', autouse=False)

@@ -59,8 +59,7 @@ except RequestError:
 dashboard = aio.dashboards('weather-dashboard')
 
 print("Find your dashboard at: " +
-      "https://io.adafruit.com/{0}/dashboards/{1}".format(ADAFRUIT_IO_USERNAME,
-                                                          dashboard.key))
+      f"https://io.adafruit.com/{ADAFRUIT_IO_USERNAME}/dashboards/{dashboard.key}")
 
 # Read the BME280 and discard the initial nonsense readings
 sensor.update(interval=10.0)

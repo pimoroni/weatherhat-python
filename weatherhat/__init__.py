@@ -147,7 +147,7 @@ class WeatherHAT:
         return hpa * 0.02953
 
     def degrees_to_cardinal(self, degrees):
-        value, cardinal = min(wind_degrees_to_cardinal.items(), key=lambda item: abs(item[0] - degrees))
+        _value, cardinal = min(wind_degrees_to_cardinal.items(), key=lambda item: abs(item[0] - degrees))
         return cardinal
 
     def _on_ioe_interrupt(self, event):
@@ -179,7 +179,7 @@ class WeatherHAT:
 
         self._lock.release()
 
-        value, self.wind_direction = min(wind_direction_to_degrees.items(), key=lambda item: abs(item[0] - self.wind_direction_raw))
+        _value, self.wind_direction = min(wind_direction_to_degrees.items(), key=lambda item: abs(item[0] - self.wind_direction_raw))
 
         # Don't update rain/wind data until we've sampled for long enough
         if delta < interval:
