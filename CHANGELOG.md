@@ -1,3 +1,13 @@
+# Changelog
+
+1.0.1
+-----
+
+* Use gpiodevice.watch_pin for the IO Expander interrupt
+* Examples: use gpiodevice.Watch for the buttons
+* Add a gpiodevice dependency
+* Remove the unmaintained testing/ display simulator
+
 1.0.0
 -----
 
