@@ -1,13 +1,13 @@
 [build-system]
-requires = ["hatchling", "hatch-fancy-pypi-readme"]
+requires = ["hatchling", "hatch-fancy-pypi-readme", "hatch-requirements-txt", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
 [project]
 name = "weatherhat"
-dynamic = ["version", "readme"]
+dynamic = ["version", "readme", "optional-dependencies"]
 description = "Library for the Pimoroni Weather HAT"
 license = {file = "LICENSE"}
-requires-python = ">= 3.7"
+requires-python = ">= 3.9"
 authors = [
     { name = "Philip Howard", email = "phil@pimoroni.com" },
 ]
@@ -24,11 +24,11 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Software Development",
     "Topic :: Software Development :: Libraries",
@@ -36,25 +36,44 @@ classifiers = [
 ]
 dependencies = [
     "pimoroni-bme280 >= 1.0.0",
-	"ltr559 >= 1.0.0",
-	"pimoroni-ioexpander >= 1.0.1",
-	"st7789 >= 1.0.1",
-	"smbus2"
+    "ltr559 >= 1.0.0",
+    "pimoroni-ioexpander >= 1.0.1",
+    "st7789 >= 1.0.1",
+    "smbus2",
+    "gpiodevice >= 0.1.0"
 ]
+
+[tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
+example-depends = ["requirements-examples.txt"]
 
 [project.urls]
 GitHub = "https://www.github.com/pimoroni/weatherhat-python"
 Homepage = "https://www.pimoroni.com"
 
+[dependency-groups]
+dev = [
+    "check-manifest",
+    "ruff==0.15.20",
+    "codespell",
+    "pre-commit",
+    "twine",
+    "hatch",
+    "hatch-fancy-pypi-readme",
+    "hatch-requirements-txt",
+    "uv-dynamic-versioning",
+    "tox",
+    "pdoc",
+]
+
 [tool.hatch.version]
-path = "weatherhat/__init__.py"
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0"
 
 [tool.hatch.build]
 include = [
     "weatherhat/*.py",
-    "README.md",
-    "CHANGELOG.md",
-    "LICENSE"
 ]
 
 [tool.hatch.build.targets.sdist]
@@ -63,7 +82,8 @@ include = [
 ]
 exclude = [
     ".*",
-    "dist"
+    "dist",
+    "uv.lock"
 ]
 
 [tool.hatch.metadata.hooks.fancy-pypi-readme]
@@ -85,6 +105,9 @@ exclude = [
 ]
 line-length = 200
 
+[tool.ruff.lint]
+extend-select = ["I", "UP", "SIM", "PIE", "C4", "B", "RUF", "PERF", "FURB", "PLE"]
+
 [tool.codespell]
 skip = """
 ./.tox,\
@@ -98,14 +121,9 @@ ignore-words-list = """
 pres,\
 """
 
-[tool.isort]
-line_length = 200
-
 [tool.check-manifest]
 ignore = [
-    '.stickler.yml',
     'boilerplate.md',
-    'check.sh',
     'install.sh',
     'uninstall.sh',
     'Makefile',
@@ -113,7 +131,8 @@ ignore = [
     'tests/*',
     'examples/*',
     '.coveragerc',
-    'requirements-dev.txt'
+    '.editorconfig',
+    '.pre-commit-config.yaml',
 ]
 
 [tool.pimoroni]

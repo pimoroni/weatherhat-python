@@ -1,7 +1,7 @@
 # Weather HAT Python Library & Examples
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/pimoroni/weatherhat-python/test.yml?branch=main)](https://github.com/pimoroni/weatherhat-python/actions/workflows/test.yml)
-[![Coverage Status](https://coveralls.io/repos/github/pimoroni/weatherhat-python/badge.svg?branch=master)](https://coveralls.io/github/pimoroni/weatherhat-python?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/pimoroni/weatherhat-python/badge.svg?branch=main)](https://coveralls.io/github/pimoroni/weatherhat-python?branch=main)
 [![PyPi Package](https://img.shields.io/pypi/v/weatherhat.svg)](https://pypi.python.org/pypi/weatherhat)
 [![Python Versions](https://img.shields.io/pypi/pyversions/weatherhat.svg)](https://pypi.python.org/pypi/weatherhat)
 
@@ -14,7 +14,7 @@ Weather HAT is a tidy all-in-one solution for hooking up climate and environment
 
 # Installing
 
-We'd recommend using this library with Raspberry Pi OS Bookworm or later. It requires Python ≥3.7.
+We'd recommend using this library with Raspberry Pi OS Bookworm or later. It requires Python >=3.9.
 
 ## Full install (recommended):
 
@@ -54,7 +54,7 @@ cd weatherhat-python
 * Switch to the virtual environment: `source ~/.virtualenvs/pimoroni/bin/activate`
 * Install the library: `pip install weatherhat`
 
-In some cases you may need to us `sudo` or install pip with: `sudo apt install python3-pip`.
+In some cases you may need to use `sudo` or install pip with: `sudo apt install python3-pip`.
 
 This will not make any configuration changes, so you may also need to enable:
 
@@ -241,7 +241,7 @@ sensor.rain
 
 Rain amount in millimeters per second.
 
-Weather HAT counts every "tick" of the rain gauge (roughly .28mm) over the given update internal and converts this into mm/sec.
+Weather HAT counts every "tick" of the rain gauge (roughly .28mm) over the given update interval and converts this into mm/sec.
 
 ### Total Rain
 
