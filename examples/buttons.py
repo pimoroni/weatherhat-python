@@ -1,4 +1,4 @@
-import select
+import time
 from datetime import timedelta
 
 import gpiod
@@ -7,7 +7,7 @@ from gpiod.line import Bias, Edge
 
 print("""buttons.py - Detect which button has been pressed
 This example should demonstrate how to:
-1. set up gpiod to read buttons,
+1. set up gpiodevice to watch the buttons,
 2. determine which button has been pressed
 Press Ctrl+C to exit!
 """)
@@ -29,19 +29,16 @@ lines = chip.request_lines(
             config=BUTTONS
         )
 
+
 # "handle_button" will be called every time a button is pressed
-# It receives one argument: the associated input pin.
-def handle_button(pin):
-    label = LABELS[pin]
-    print(f"Button press detected on pin: {pin} label: {label}")
+# It receives one argument: the gpiod edge event, which carries the input pin.
+def handle_button(event):
+    label = LABELS[event.line_offset]
+    print(f"Button press detected on pin: {event.line_offset} label: {label}")
 
-# read_edge_events does not allow us to specify a timeout
-# so we'll use poll to check if any events are waiting for us...
-poll = select.poll()
-poll.register(lines.fd, select.POLLIN)
 
-# Poll for button events
-while True:
-    if poll.poll(10):
-        for event in lines.read_edge_events():
-            handle_button(event.line_offset)
+# gpiodevice.Watch polls the lines on a background thread and calls
+# "handle_button" for us, so there's no edge event loop to write here.
+with gpiodevice.Watch(lines, handle_button):
+    while True:
+        time.sleep(1.0)

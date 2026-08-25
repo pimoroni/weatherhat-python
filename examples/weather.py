@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import math
 import pathlib
-import select
+import queue
 import time
 from datetime import timedelta
 
@@ -499,13 +499,6 @@ class ViewController:
         self._current_view = 0
         self._current_subview = 0
 
-        #GPIO.setmode(GPIO.BCM)
-        #GPIO.setwarnings(False)
-        #GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-        #for pin in BUTTONS:
-        #    GPIO.add_event_detect(pin, GPIO.FALLING, self.handle_button, bouncetime=200)
-
         config = {}
         for pin in BUTTONS:
             config[pin] = gpiod.LineSettings(
@@ -515,12 +508,19 @@ class ViewController:
             )
 
         chip = gpiodevice.find_chip_by_platform()
-        self._buttons = chip.request_lines(consumer="LTR559", config=config)
-        self._poll = select.poll()
-        self._poll.register(self._buttons.fd, select.POLLIN)
+        self._buttons = chip.request_lines(consumer="weather.py", config=config)
 
-    def handle_button(self, pin):
-        index = BUTTONS.index(pin)
+        # Watch dispatches on a background thread, but changing view from there
+        # would race the main loop's render. Queue the events and handle them
+        # in update() instead.
+        self._events = queue.SimpleQueue()
+        self._watch = gpiodevice.Watch(self._buttons, self._events.put).start()
+
+    def close(self):
+        self._watch.close()
+
+    def handle_button(self, event):
+        index = BUTTONS.index(event.line_offset)
         label = LABELS[index]
 
         if label == "A":  # Select View
@@ -567,9 +567,8 @@ class ViewController:
         return self.get_current_view()
 
     def update(self):
-        if self._poll.poll(10):
-            for event in self._buttons.read_edge_events():
-                self.handle_button(event.line_offset)
+        while not self._events.empty():
+            self.handle_button(self._events.get())
         self.view.update()
 
     def render(self):
@@ -731,12 +730,15 @@ def main():
         )
     )
 
-    while True:
-        sensordata.update(interval=5.0)
-        viewcontroller.update()
-        viewcontroller.render()
-        display.display(image.resize((DISPLAY_WIDTH, DISPLAY_HEIGHT)).convert("RGB"))
-        time.sleep(1.0 / FPS)
+    try:
+        while True:
+            sensordata.update(interval=5.0)
+            viewcontroller.update()
+            viewcontroller.render()
+            display.display(image.resize((DISPLAY_WIDTH, DISPLAY_HEIGHT)).convert("RGB"))
+            time.sleep(1.0 / FPS)
+    finally:
+        viewcontroller.close()
 
 
 if __name__ == "__main__":
