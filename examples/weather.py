@@ -160,7 +160,6 @@ class SensorView(View):
             bar_color = colors[color_idx]
             if color_idx < len(colors) - 1:
                 bar_color = self.blend(colors[color_idx], colors[color_idx + 1], blend)
-                bar_color = bar_color
 
             x = (i * bar_width)
 

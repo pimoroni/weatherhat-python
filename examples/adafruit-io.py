@@ -94,7 +94,7 @@ while True:
         aio.send_data(winddirection_feed.key, winddirection)
         aio.send_data(rain_feed.key, rain)
         print('Data sent to adafruit.io')
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - keep the example running through network errors
         print(e)
 
     # leave at least 30 seconds between updates for free Adafruit.io accounts
