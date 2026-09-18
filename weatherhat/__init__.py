@@ -2,6 +2,7 @@ import math
 import select
 import threading
 import time
+from importlib.metadata import PackageNotFoundError, version
 
 import gpiod
 import gpiodevice
@@ -13,7 +14,10 @@ from smbus2 import SMBus
 
 from .history import wind_degrees_to_cardinal
 
-__version__ = '1.0.0'
+try:
+    __version__ = version("weatherhat")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
 
 # Wind Vane
 PIN_WV = 8     # P0.3 ANE6
