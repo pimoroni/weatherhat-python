@@ -24,7 +24,7 @@ wind_degrees_to_short_cardinal = {
 
 
 class HistoryEntry:
-    __slots__ = 'value', 'timestamp'
+    __slots__ = 'timestamp', 'value'
 
     def __init__(self, value, timestamp=None):
         self.timestamp = timestamp if timestamp is not None else time.time()
@@ -113,11 +113,11 @@ class WindSpeedHistory(History):
 
 class WindDirectionHistory(History):
     def degrees_to_cardinal(self, degrees):
-        value, cardinal = min(wind_degrees_to_cardinal.items(), key=lambda item: abs(item[0] - degrees))
+        _value, cardinal = min(wind_degrees_to_cardinal.items(), key=lambda item: abs(item[0] - degrees))
         return cardinal
 
     def degrees_to_short_cardinal(self, degrees):
-        value, cardinal = min(wind_degrees_to_short_cardinal.items(), key=lambda item: abs(item[0] - degrees))
+        _value, cardinal = min(wind_degrees_to_short_cardinal.items(), key=lambda item: abs(item[0] - degrees))
         return cardinal
 
     def average_compass(self, sample_over=None):
